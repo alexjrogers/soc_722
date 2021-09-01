@@ -4,6 +4,19 @@ author: "Alex Rogers"
 output: html_document
 ---
 
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(readr)
+
+nc <- read_csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vTm2WZwNBoQdZhMgot7urbtu8eG7tzAq-60ZJsQ_nupykCAcW0OXebVpHksPWyR4x8xJTVQ8KAulAFS/pub?gid=202410847&single=true&output=csv")
+
+```
+
+
+
 ### Exercise 1
 
 R is considering the variable habit to be a character type variable.
@@ -66,3 +79,6 @@ Calls: <Anonymous> ... handle -> withCallingHandlers -> withVisible -> eval -> e
 Execution halted"
 
 Same problem after deleting the code chunk, now the problem is coming from the following code chunk. I know I have ggplot loaded because I can run the code from the console. wtf is going on? it also runs the code when I run it from the markdown document, just can't knit.
+
+
+Alright I'm a goddamned genius. I didn't understand that you needed to open the library in the rmarkdown document, I figured if you had loaded it in the console it would apply to the markdown file (which doesn't really make sense in hindsight). I've loaded the necessary libraries and the data frame from the google sheet and it's actually working.

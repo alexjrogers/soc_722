@@ -1,4 +1,22 @@
 ---
 title: "Data Visualization"
+author: "Alex Rogers"
 output: html_document
 ---
+
+### Exercise 1
+
+R is considering the variable habit to be a character type variable.
+
+---
+What is going on with my Y axis labels when I run this code?:
+
+
+ggplot(data = nc, aes(x = weeks, y = weight)) + 
+  geom_point()
+
+---
+
+### Exercise 2
+
+There is a positive relationship between length of pregnancy and birth weight of baby.

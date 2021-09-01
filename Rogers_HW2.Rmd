@@ -8,7 +8,7 @@ output: html_document
 
 R is considering the variable habit to be a character type variable.
 
----
+
 What is going on with my Y axis labels when I run this code?:
 
 
@@ -21,8 +21,48 @@ ggplot(data = nc, aes(x = weeks, y = weight)) +
   
   I am uploading this code to save it. When I generate the scatterplot my y axis labels are overlapping and messy. I am going to try starting over. I also noticed an error when I loaded the spreadsheet, that I was missing a library called curl so it was using url instead. I'm going to try to install the curl package.
 
----
+
+I instaleld the curl package and the labels on the y axis are showing as I expected. I'm not sure if installing the package or restarting R fixed the problem. Next time I'll save and just try relaunching R first.
+
+I also noticed that before these changes the data frame had 743 entries, now it has 800 (still not the 1000 moderndive says there should be)
+
 
 ### Exercise 2
 
 There is a positive relationship between length of pregnancy and birth weight of baby.
+
+### Exercise 3
+
+```{r}
+
+ggplot(nc, aes(weeks, gained)) +
+geom_point() +
+labs(x = "Length of Pregnancy (weeks)", y = "Weight Gained by Mother (lbs)", title = "Relationship between pregnancy duration and mother's weight gained")
+
+
+
+```
+
+Okay so that worked but why is it only showing up to twelve weeks? The lowest value in the data frame is 20 and the highest is 45. I actually have no idea what the x axis is representing
+
+jk I figured it out I had weight in the x axis argument for ggplot instead of weeks... trying again
+```{r}
+
+ggplot(nc, aes(weeks, gained)) +
+geom_point() +
+labs(x = "Length of Pregnancy (weeks)", y = "Weight Gained by Mother (lbs)", title = "Relationship between pregnancy duration and mother's weight gained")
+
+
+
+```
+holy shit I did it.
+
+jk I didn't. now when I got to knit the markdown file I get the following error: "processing file: Rogers_HW2.Rmd
+Quitting from lines 37-44 (Rogers_HW2.Rmd) 
+Error in ggplot(nc, aes(weeks, gained)) : 
+  could not find function "ggplot"
+Calls: <Anonymous> ... handle -> withCallingHandlers -> withVisible -> eval -> eval
+
+Execution halted"
+
+Same problem after deleting the code chunk, now the problem is coming from the following code chunk. I know I have ggplot loaded because I can run the code from the console. wtf is going on? it also runs the code when I run it from the markdown document, just can't knit.

@@ -14,6 +14,12 @@ What is going on with my Y axis labels when I run this code?:
 
 ggplot(data = nc, aes(x = weeks, y = weight)) + 
   geom_point()
+  
+  
+  
+  
+  
+  I am uploading this code to save it. When I generate the scatterplot my y axis labels are overlapping and messy. I am going to try starting over. I also noticed an error when I loaded the spreadsheet, that I was missing a library called curl so it was using url instead. I'm going to try to install the curl package.
 
 ---
 

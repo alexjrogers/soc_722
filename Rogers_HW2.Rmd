@@ -82,3 +82,14 @@ Same problem after deleting the code chunk, now the problem is coming from the f
 
 
 Alright I'm a goddamned genius. I didn't understand that you needed to open the library in the rmarkdown document, I figured if you had loaded it in the console it would apply to the markdown file (which doesn't really make sense in hindsight). I've loaded the necessary libraries and the data frame from the google sheet and it's actually working.
+
+
+
+### Exercise 4
+
+
+A. Adding the argument color = premie made all data points with pregnancy length < ~37 blue
+
+B. There are four? (maternal weight gain, pregnancy length, full term, premie)
+
+C. The rough cutoff for a premie vs full term seems to be about 37 weeks

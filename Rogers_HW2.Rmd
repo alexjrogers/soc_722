@@ -42,7 +42,7 @@ I also noticed that before these changes the data frame had 743 entries, now it 
 
 ### Exercise 2
 
-There is a positive relationship between length of pregnancy and birth weight of baby.
+There is a positive relationship between length of pregnancy and birth weight of baby becasue as one increases so does the other.
 
 ### Exercise 3
 
@@ -93,3 +93,40 @@ A. Adding the argument color = premie made all data points with pregnancy length
 B. There are four? (maternal weight gain, pregnancy length, full term, premie)
 
 C. The rough cutoff for a premie vs full term seems to be about 37 weeks
+
+### Exercise 5
+
+```{r}
+
+ggplot(nc, aes(mage, weight, color = gender)) +
+  geom_point() +
+  labs(x = "Age of mother (years)", y = "Weight of baby (lbs)")
+  
+
+
+```
+
+I don't see a strong relationship between mother's age and weight of baby. There seems to be a large cluster at about 7.5 lbs which spreads across mother ages.
+
+
+### Histograms
+
+```{r}
+
+ggplot(nc, aes(weeks)) +
+  geom_histogram()
+
+
+```
+```{r}
+ggplot(nc, aes(weeks)) +
+  geom_histogram(binwidth = 1, color = "white", fill = "darkorchid")
+```
+
+### Exercise 6
+
+A. I think that the y-axis "count" is counting the number of births recorded at a given number of weeks in the x-axis.
+
+B. The average length of pregnancies in weeks seems to be ~39 or ~40
+
+C. If we changed the binwidth to 100 there would be only one bin, that bin would contain  800 cases

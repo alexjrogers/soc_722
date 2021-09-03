@@ -1,0 +1,35 @@
+---
+title: "PS03: Data wrangling with dplyr"
+output: html_document
+author: Alex Rogers
+---
+
+```{r}
+
+library(dplyr)
+library(ggplot2)
+library(nycflights13)
+
+```
+### Notes
+
+This is where I'm keeping my notes and code for the data wrangling section of modern dive.
+
+
+```{r}
+
+portland_flights <- flights |> 
+  filter(dest == "PDX")
+View(portland_flights)
+
+
+```
+
+```{r}
+btv_sea_flights_all <- flights |> 
+  filter(origin == "JFK" & (dest == "BTV" | dest == "SEA") & month >= 10)
+View(btv_sea_flights_all)
+
+
+```
+

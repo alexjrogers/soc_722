@@ -130,3 +130,29 @@ A. I think that the y-axis "count" is counting the number of births recorded at 
 B. The average length of pregnancies in weeks seems to be ~39 or ~40
 
 C. If we changed the binwidth to 100 there would be only one bin, that bin would contain  800 cases
+
+### Exercise 7
+
+```{r}
+
+ggplot(nc, aes(weight)) +
+  geom_histogram(binwidth = 0.7, color = "white", fill = "darkorchid") +
+  labs(x = "Weight of newborns (lbs)", y = "Number of newborns at given weight", title = "Distibution of newborn birth weights")
+
+```
+
+### Exercise 8
+
+```{r}
+
+ggplot(nc, aes(weight)) +
+  geom_histogram(binwidth = 0.5, color = "white", fill = "darkorchid") +
+  facet_wrap(~ gender, ncol = 1) +
+  labs(x = "Weight at birth", y = "Number of births at given weight", title = "Birth weight of baby by gender")
+
+```
+
+
+
+
+Female babies seem to have a higher average birthweight

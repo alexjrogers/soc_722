@@ -155,4 +155,81 @@ ggplot(nc, aes(weight)) +
 
 
 
-Female babies seem to have a higher average birthweight
+Female babies seem to have a higher average birth weight
+
+
+### Exercise 9
+
+
+```{r}
+
+ggplot(nc, aes(mature, gained)) +
+  geom_boxplot(color = "darkorchid", fill = "mediumorchid") +
+labs(title = "Maternal weight gained by mother maturity")
+
+```
+
+
+The median weight gain during pregnancy is larger for younger moms.
+
+
+### Exercise 10
+
+
+```{r}
+ggplot(nc, aes(habit, weeks)) +
+  geom_boxplot(color = "darkorchid", fill = "mediumorchid") +
+  labs(title = "Pregnancy duration by smoking habit")
+
+```
+
+
+The duration of the pregnancy is more variable in the smoker group. I can tell this because the tail of the boxplot and the boxplot itself are longer than in the non-smoker group.
+
+
+### Exercise 11
+
+
+```{r}
+
+ggplot(nc, aes(fage)) +
+  geom_histogram(binwidth = 1, color = "white", fill = "darkorchid") +
+labs(title = "Father's age distribution", x = "Age of father", y = "Count (number of fathers)")
+
+
+```
+
+These data seem to have a slight skew to the right.
+
+
+### Exercise 12
+
+```{r}
+
+ggplot(nc, aes(whitemom, weight)) +
+geom_boxplot(color = "black", fill = "darkorchid", alpha = 0.5) +
+labs(title = "Weight of baby by mother's race", x = "Race of mother", y = "Weight of baby")
+
+
+```
+
+
+I can tell that the media birth weight is higher when the mother is white because the middle line of the boxplot is higher (visually) for the white boxplot than the not white
+
+
+### Exercise 13
+
+
+```{r}
+
+ggplot(nc, aes(mage, weeks)) +
+  geom_point(color = "darkorchid", alpha = 0.2) +
+labs(title = "Relationship of pregnancy duration to mother's age", x = "Age of mother (years)", y = "Duration of pregnancy (weeks)")
+
+
+```
+
+
+
+
+It doesn't appear that as the age of the mother increases the duration of the pregnancy decreases.

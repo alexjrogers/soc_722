@@ -190,6 +190,30 @@ View(portland_flights)</code></pre>
 <pre class="r"><code>btv_sea_flights_all &lt;- flights |&gt; 
   filter(origin == &quot;JFK&quot; &amp; (dest == &quot;BTV&quot; | dest == &quot;SEA&quot;) &amp; month &gt;= 10)
 View(btv_sea_flights_all)</code></pre>
+<pre class="r"><code>not_BTV_SEA &lt;- flights |&gt; 
+  filter(!(dest == &quot;BTV&quot; | dest == &quot;SEA&quot;))
+View(not_BTV_SEA)</code></pre>
+<pre class="r"><code>many_airports &lt;- flights |&gt; 
+  filter(dest == &quot;SEA&quot; | dest == &quot;SFO&quot; | dest == &quot;PDX&quot; | dest == &quot;BTV&quot; | dest == &quot;BDL&quot;)
+View(many_airports)</code></pre>
+<pre class="r"><code>many_airports &lt;- flights |&gt; 
+  filter(dest %in% c(&quot;SEA&quot;, &quot;SFO&quot;, &quot;PDX&quot;, &quot;BTV&quot;, &quot;BDL&quot;))
+View(many_airports)</code></pre>
+</div>
+<div id="summarize-variables" class="section level3">
+<h3>3.3, summarize variables</h3>
+<pre class="r"><code>summary_temp &lt;- weather |&gt; 
+  summarize(mean = mean(temp, na.rm = TRUE), 
+            std_dev = sd(temp, na.rm = TRUE))
+summary_temp</code></pre>
+<pre><code>## # A tibble: 1 x 2
+##    mean std_dev
+##   &lt;dbl&gt;   &lt;dbl&gt;
+## 1  55.3    17.8</code></pre>
+<p>The code in chunk 7 (which starts with summary_temp) is confusing for me to read.</p>
+</div>
+<div id="group-by-rows" class="section level3">
+<h3>3.4 group by rows</h3>
 </div>
 
 

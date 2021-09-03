@@ -33,3 +33,107 @@ View(btv_sea_flights_all)
 
 ```
 
+```{r}
+
+not_BTV_SEA <- flights |> 
+  filter(!(dest == "BTV" | dest == "SEA"))
+View(not_BTV_SEA)
+
+
+```
+
+
+```{r}
+
+many_airports <- flights |> 
+  filter(dest == "SEA" | dest == "SFO" | dest == "PDX" | dest == "BTV" | dest == "BDL")
+View(many_airports)
+
+```
+
+```{r}
+many_airports <- flights |> 
+  filter(dest %in% c("SEA", "SFO", "PDX", "BTV", "BDL"))
+View(many_airports)
+
+
+```
+
+### 3.3, summarize variables
+
+```{r}
+
+summary_temp <- weather |> 
+  summarize(mean = mean(temp, na.rm = TRUE), 
+            std_dev = sd(temp, na.rm = TRUE))
+summary_temp
+
+```
+
+
+The code in chunk 7 (which starts with summary_temp) is confusing for me to read. 
+
+### 3.4 group by rows
+
+
+```{r}
+
+summary_monthly_temp <- weather |> 
+  group_by(month) |> 
+  summarize(mean = mean(temp, na.rm = TRUE),
+            std_dev = sd(temp, na.rm = TRUE))
+summary_monthly_temp
+
+```
+
+```{r}
+diamonds
+```
+
+```{r}
+
+diamonds |> 
+  group_by(cut)
+
+```
+
+
+```{r}
+
+diamonds |> 
+  group_by(cut) |> 
+  summarize(avg_price = mean(price))
+
+
+```
+
+
+```{r}
+diamonds |> 
+group_by(cut) |> 
+ungroup()
+
+
+```
+
+```{r}
+
+by_origin <- flights |> 
+  group_by(origin) |> 
+  summarize(count = n())
+by_origin
+
+
+```
+
+### 3.4.1 Grouping by more than 1 variable
+
+```{r}
+
+by_origin_monthly <- flights |> 
+  group_by(origin, month) |> 
+  summarize(count = n())
+by_origin_monthly
+
+```
+

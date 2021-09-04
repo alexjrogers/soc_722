@@ -1,0 +1,169 @@
+---
+title: "Rogers_PS03"
+output: html_document
+author: Alex Rogers
+---
+
+
+```{r}
+
+library(ggplot2)
+library(dplyr)
+data(txhousing)
+
+
+
+```
+
+### Question 1
+
+The last city listed in the data frame is Wichita Falls.
+
+### Question 2
+
+The listings variable in this data set is the number of total active listings
+
+
+### Question 3
+
+```{r}
+
+txhousing <- txhousing |> select(-inventory)
+
+```
+
+
+### Question 4
+
+```{r}
+
+dallas_sub <- txhousing |> filter(city == "Dallas", (year == 2012| year == 2013))
+
+```
+
+
+### Question 5
+
+```{r}
+
+dallas_sub <- dallas_sub |> 
+  mutate(prct_sold = (sales/listings * 100) )
+
+```
+
+
+### Question 6
+
+```{r}
+
+dallas_summary <- dallas_sub |> 
+  group_by(month) |> 
+  summarize(mean (prct_sold))
+
+
+```
+
+### Question 7
+
+
+```{r}
+
+dallas_sub |> 
+  arrange(desc(prct_sold))
+
+
+```
+
+Something isn't working here and I'm not sure why.
+
+I had the code here as:
+
+dallas_summary |> 
+  arrange(desc(prct_sold))
+
+
+But when I run it that way (with the data frame as dallas_summary instead of dallas_sub) I get an error that says the object prct_sold is not found. When I look at the data frame for dallas_summary I can see the prct_sold column is there (though it says "mean(prct_sold)"). I was thinking maybe that is the name of the column, but pointing to the object "mean(prct_sold)" doesn't work either. I'm stumped.
+
+
+### Question 8
+
+```{r}
+
+txhousing |> 
+  filter(year == 2012 | year == 2013, city == "Dallas") |> 
+  mutate(prct_sold = sales/listings *100) |> 
+  group_by(month) |> 
+  summarize(mean_prct_sold = mean(prct_sold)) |> 
+  arrange(desc(mean_prct_sold))
+
+
+```
+This code chunk calculated the percentages of home sold (of those listed) by month in 2012 and 2013. I think because of the "group_by(month)" function, it combined the months (e.g january 2012 and 2013 are combined and the average given).
+
+This was achieved by:
+
+filtering to show only 2012 OR 2013.
+
+mutating to create a new variable (percent of homes listed vs sold)
+
+calculating the mean of those percents (summarize)
+
+ordering them starting with the highest value (arrange)
+
+
+### Question 9
+
+
+```{r}
+
+least <- txhousing |> 
+  filter(year == 2015 & month == 1) |> 
+  arrange(listings)
+
+
+```
+
+San Marcos had the fewest listings in January 2015.
+
+
+### Question 10
+
+
+```{r}
+txhousing |> 
+  select (sales, month, year) |> 
+  filter(year == 2012) |> 
+  arrange(desc(sales))
+
+
+
+
+```
+
+The most houses were sold in Texas in 2012 in August.
+
+
+### Question 11
+
+
+
+```{r}
+
+  PS03_sales <- txhousing |> 
+  select(year, sales, city) |> 
+  filter(year == 2001 | year == 2000, (city == "Dallas" | city == "Austin")) |> 
+  select(sales)
+
+
+  sum(PS03_sales)
+
+
+
+
+  
+
+
+```
+
+
+That was hard.

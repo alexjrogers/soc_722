@@ -1,0 +1,450 @@
+---
+title: "Rogers_HW3"
+author: "Alex Rogers"
+
+output: html_document
+---
+
+Hi Nico, sorry you have to read all this mess. This shit is so hard for me.
+
+
+```{r}
+
+library(tidyverse)
+
+deck <- tibble(
+  # tibble is a more flexible data.frame
+  card = rep(
+    c("ace",
+      "deuce",
+      "three",
+      "four",
+      "five",
+      "six",
+      "seven",
+      "eight",
+      "nine",
+      "ten",
+      "jack",
+      "queen",
+      "king"
+    ),4),
+  suit =
+    rep(c(
+      "diamonds", 
+      "hearts", 
+      "clubs", 
+      "spades"),
+        each = 13),
+  color = rep(c("red", 
+                "black"),
+              each = 26)
+)
+
+glimpse(deck)
+
+
+pr_black <- deck %>% 
+  filter(color == "black") %>% 
+  nrow()/nrow(deck)
+
+pr_ace <- deck %>% 
+  filter(card == "ace") %>% 
+  nrow()/nrow(deck)
+
+pr_black_and_ace <- deck %>% 
+  filter(card == "ace" & color == "black") %>% 
+  nrow()/nrow(deck)
+
+pr_black + pr_ace - pr_black_and_ace
+
+```
+
+### Question 1
+
+
+```{r}
+
+pr_black * pr_black
+
+
+```
+
+This seems logical to me, since we only have two options in each event, it's like flipping a coin twice.
+
+
+Part 2: Probability of getting one king or one ace: $king \cup ace$. Using naive probability this is number of aces or kings (8) / total number of cards (52)
+
+
+
+```{r}
+
+pr_ace_or_king <- 
+deck |> 
+filter(card == "ace" | card == "king")
+nrow(pr_ace_or_king)/nrow(deck)
+
+
+```
+
+Part 3: Probability of getting two aces in two draws with replacement: 4/52 * 4/52
+
+```{r}
+
+pr_ace <- deck |> 
+  filter(card == "ace") |> 
+nrow()/nrow(deck)
+  pr_ace * pr_ace
+  
+```
+
+### Question 2
+
+
+```{r}
+
+sample_n(deck, size =5, replace = FALSE)
+sample_n(deck, size =5, replace = FALSE)
+sample_n(deck, size =5, replace = FALSE)
+sample_n(deck, size =5, replace = FALSE)
+sample_n(deck, size =5, replace = FALSE)
+
+
+```
+
+What is the total number of different hands you can draw in poker? This is asking us to do (I think) 52 choose 5 $\binom{52}{5}$
+
+By googling I found that there is a function in the base R library that does this
+
+(turns out I didn't need to google this, I just needed to finish reading the chapter)
+
+```{r}
+
+choose(52, 5)
+
+
+```
+
+### Question 3
+
+The probability that each suit is represented in a hand (getting 1 card from each suit, with one suit showing up twice)
+
+
+```{r}
+
+pr_hearts <- deck |> 
+  filter(suit == "hearts")
+nrow(pr_hearts)/nrow(deck)
+
+pr_spades <- deck |> 
+  filter(suit == "spades")
+nrow(pr_spades)/nrow(deck)
+
+pr_diamonds <- deck |> 
+  filter(suit == "diamonds")
+nrow(pr_diamonds)/nrow(deck)
+
+pr_clubs <- deck |> 
+  filter(suit == "clubs")
+nrow(pr_clubs)/nrow(deck)
+
+```
+
+
+I'm not sure what I was going for here but this was not a helpful direction, I'm saving the code and moving on to a different method.
+
+
+I'm using the full house in poker example (1.4.20) from Blitztein and Hwang as a guide here.
+
+
+4 Suits, 1 of each 3 times, 1 of the same 2 times (without replacement.
+```{r}
+
+# this is a syntactical nightmare. 
+#(4*(choose(52, 1)* 3*(choose(51, 1) * 2*(choose(50, 1) * 1 *(49, 1))))
+
+
+```
+
+
+
+trying again 
+
+
+```{r}
+
+(4*choose(4, 1) * 3 * choose(4, 1) * 2 * choose(4, 1) * 1 * choose(4, 2)) / choose(52, 5)
+
+```
+That feels like a reasonable probability?
+
+
+### Question 4
+
+What is the probability of getting at least one ace in a five card hand?
+
+So, the probability of getting one ace in one draw is 4/52.
+
+How do I expand that to drawing 5 cards instead of one?
+
+I think this is similar to the previous question, I understand that I need to use the binomial theorem (I think) but the syntax of trying to do this in R is really throwing me.
+
+
+
+Okay, joke's on me, I hadn't read the R section of the chapter for this week, if I had done that this all would have been a lot easier.
+
+Double joke's on me, I've read the whole thing and I'm still not getting it.
+
+
+Probability of getting 1 ace in one 5-card hand:
+```{r}
+
+# I'm trying to approach the problem from a more simple perspective
+
+draws <- (replicate(100, (sample)(52,5)))
+
+
+
+# this draws 5 cards 100 times, obviously I would need more (e.g.) 10^4 in order to get a good probability estimate, but I'm trying to keep it simple for now.
+
+#So this gives me the data frame "draws". I want to count how many times a 1,2,3,4 (1:4) appears across the data frame, thus counting how many times an ace was drawn. I can then divide that by the total number of cards drawn and I think that would give me the probability of drawing an ace.
+
+#filter(draws, 5 == "1")
+
+#What I'm trying here is to use the filter function to look at row 5 and show only times when a 5 was drawn, this isn't working. I think I need a  tibble with named rows and columns to do this?
+
+#sample(deck, size = 4)
+
+# I realized I'm basically trying to rebuild a tool I already have, which is the deck tibble from earlier in the hw. but now when I try to sample that I get the error "cannot take sample large than the population when 'replace = FALSE'
+
+#but I'm trying to take a sample of 5 with a population of 52 so I don't get that.
+
+#okay so sample(deck, 1) gives me a tibble with just the colors, sample(deck, 2) gives me a tibble with the colors and the card and so on until sample(deck, 4) gives the previous error. So either my syntax is off or I just can't use sample on this tibble (maybe because it's not intergers?) checking out ?sample
+
+#I've been at this question for a couple hours now, getting discouraged, moving on.
+
+
+```
+
+
+Okay I'm gonna try again since I was able to mostly figure out the rest of the homework.
+
+The probability of getting an ace is:
+
+first card: 4/52
+second card: 4/51
+third card: 4/50
+fourth card: 4/49
+fifth card: 4/48
+
+This isn't right though because it's not 4/51 as the second card if we draw an ace on the first card.
+
+Gonna  try following the birthday problem example.
+
+```{r}
+
+
+1 - ((52 * 51 * 50 * 49 * 48) / 52^5)
+
+```
+
+
+
+So I am using the formula 
+
+1 - 52 * 53... (52 - k + 1) /
+52^k
+
+
+I'm worried this is wrong though, 17 % feels low?
+
+### Question 5
+
+
+Clunky solution: 
+
+
+```{r}
+
+df <- tibble(
+  id   = 1:6,
+  name = c('Alice', 'Bob', 'Charlie', 'Diane', 'Fred', 'Jenny')
+)
+
+df_pairs <- df %>% 
+  rename(id1 = id, name1 = name) %>% 
+  crossing(df %>% 
+             select(id2 = id, name2 = name)) %>%
+  filter(id1 < id2) %>%
+  unite(id, id1, id2) %>%
+  unite(name, name1, name2)
+
+df_pairs
+
+
+```
+
+
+
+
+This is a committee or "choose" problem so one way to do this is:
+
+```{r}
+choose(6,2)
+
+
+```
+
+I can verify this by listing out the possible pairs assuming order doesn't matter.
+
+12 13 14 15 16 23 24 25 26 34 35 36 45 46 56
+
+### Question 6
+
+Removing the line  "filter(id1 < id2) %>%" almost does it, but it then allows a person to be the president and vice president, which I assume we don't want.
+
+Trying something different...
+
+```{r}
+
+df <- tibble(
+  id   = 1:6,
+  name = c('Alice', 'Bob', 'Charlie', 'Diane', 'Fred', 'Jenny')
+)
+
+df_pairs <- df %>% 
+  rename(id1 = id, name1 = name) %>% 
+  crossing(df %>% 
+             select(id2 = id, name2 = name)) %>%
+  filter(id1 != id2) %>%
+  unite(id, id1, id2) %>%
+  unite(name, name1, name2)
+
+df_pairs
+
+
+```
+
+I think I did it by using filter and != (not equal) to only show cases where the two names are not the same (thus ensuring that order does matter)
+
+
+As for an analytic solution, we could do:
+
+
+```{r}
+
+(factorial(6)) / (factorial(6-2) * factorial(2))
+
+
+```
+
+Right so one of these is definitely wrong (possibly both)
+
+I'm looking at the tibble and it makes logical sense to me so I think my factorial code is wrong somehow. I must not be correcting for overcounting properly.
+
+```{r}
+
+(factorial(6)) / (factorial(6-2))
+
+
+```
+
+Okay, I was using the formula where order didn't matter.
+
+
+### Question 7
+
+A fair die:
+
+```{r}
+
+die <- (1:6)
+
+fair_die <- replicate(1000, sample(die, 1))
+
+fair_die_data <- tibble(x = fair_die)
+
+mean(fair_die)
+```
+
+A loaded die that lands on six 50% of the time
+
+```{r}
+
+
+ die <- (1:6)
+
+six_die <- replicate(1000, sample(die, 1, prob = c(.1, .1, .1, .1, .1, .5)))
+
+six_die_data <- tibble(x = six_die)
+
+mean(six_die)
+
+```
+
+A loaded die that lands on 5 with p = 1/3 and 6 with p = 1/3
+
+
+```{r}
+
+ die <- (1:6)
+
+thirds_die <- replicate(1000, sample(die, 1, prob = c(.1, .1, .1, .1, .3, .3)))
+
+thirds_die_data <- tibble(x = thirds_die)
+
+mean(thirds_die)
+
+```
+
+
+Fair die plot:
+
+```{r}
+
+ggplot(fair_die_data, aes(x = x)) +
+  geom_histogram(color = "white", fill = "darkorchid") +
+  labs(x = "Die roll (1 - 6)", y = "Number of rolls at given value", title = "A fair die")
+
+
+```
+
+
+Six Die Plot:
+
+```{r}
+
+ggplot(six_die_data, aes(x = x)) +
+  geom_histogram(color = "white", fill = "darkorchid") +
+  labs(x = "Die roll (1 - 6)", y = "Number of rolls at given value", title = "A six-weighted die")
+
+
+```
+
+Thirds Die Plot:
+
+```{r}
+
+ggplot(thirds_die_data, aes(x = x)) +
+  geom_histogram(color = "white", fill = "darkorchid") +
+  labs(x = "Die roll (1 - 6)", y = "Number of rolls at given value", title = "A thirds-weighted die")
+
+
+```
+
+
+```{r}
+
+die <- (1:6)
+
+test_die <- replicate(1000, sample(die, 1))
+
+test_die_data <- tibble(Roll_Value = test_die)
+
+mean(test_die)
+
+
+
+```
+
+

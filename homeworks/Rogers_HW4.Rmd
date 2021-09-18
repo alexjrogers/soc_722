@@ -1,0 +1,322 @@
+---
+title: "Rogers_HW4"
+author: "Alex Rogers"
+
+output: html_document
+---
+
+### Question 1
+
+A: $$(\text{Spanish} | \text{From South America})$$
+
+B: $$(\text{From South America} | \text{Spanish})$$
+
+
+
+C: Part of my reasoning for this question is contingent on how we define being "from" South America. Does this mean born there? Raised there? Have parents from there? Same with speak Spanish. I can read a good amount of Spanish, can understand some of it when spoken, but can't speak much of it. What category would I fall into then? 
+
+Regardless, if we're calling speak Spanish fluency and from South America grew up there, I think $$(\text{Spanish} | \text{From South America})$$
+
+would win  out. There are a lot of people from North America (Mexico and the US) who speak Spanish, as well as Spain.
+
+
+D:
+
+$(A|B) = \frac{P(A\cap B)} {P(B)}$
+
+Trying...
+ 
+ $$P(\text{Spanish} | \text{South America}) =  \frac{P(\text{Spanish}\cap \text{South America})} {P(\text{South America})}
+ 
+ 
+ $$
+
+Full probability: 
+
+ $$P(\text{Spanish} | \text{South America}) =  \frac{P(\text{Spanish}\cap \text{South America})} {P(\text{South America})}
+ $$
+
+
+
+### Question 2
+
+```{r}
+
+library(DiagrammeR)
+library(tidyverse)
+
+# Create our visualization
+tree <-
+    create_graph() %>% # initiate graph
+    add_n_nodes(
+      n = 7, 
+      type = "path",
+      label = c("START", "B", "G", "B", "G", "B", "G"), # Labels for each node
+      node_aes = node_aes(
+        shape = "circle",
+        height = 1,
+        width = 1,
+        x = c(0, 3, 3, 6, 6, 6, 6), # Just the heights of each node (so it looks like a tree)
+        y = c(0, 2, -2, 3, 1, -3, -1), 
+        fill = c("white", "blue", "green", "blue", "blue", "blue", "green"))) %>% 
+    add_edge(
+      from = 1,
+      to = 2,
+      edge_aes = edge_aes(
+        label = "0.5"
+      )) %>% 
+  add_edge(
+      from = 1,
+      to = 3,
+      edge_aes = edge_aes(
+        label = "0.5", 
+        color = "red"
+      )) %>% 
+  add_edge(
+      from = 2,
+      to = 4,
+      edge_aes = edge_aes(
+        label = "0.5"
+      )) %>% 
+  add_edge(
+      from = 2,
+      to = 5,
+      edge_aes = edge_aes(
+        label = "0.5",
+        color = "red"
+      )) %>% 
+  add_edge(
+      from = 3,
+      to = 6,
+      edge_aes = edge_aes(
+        label = "0.5"
+      )) %>% 
+  add_edge(
+      from = 3,
+      to = 7,
+      edge_aes = edge_aes(
+        label = "0.5",
+        color = "red"
+      )) 
+render_graph(tree)
+
+
+```
+
+
+
+
+
+
+
+```{r}
+
+
+library(DiagrammeR)
+library(tidyverse)
+
+# Create our visualization
+tree <-
+    create_graph() %>% # initiate graph
+    add_n_nodes(
+      n = 7, 
+      type = "path",
+      label = c("START", "B", "G", "B", "G", "B", "G"), # Labels for each node
+      node_aes = node_aes(
+        shape = "circle",
+        height = 1,
+        width = 1,
+        x = c(0, 3, 3, 6, 6, 6, 6), # Just the heights of each node (so it looks like a tree)
+        y = c(0, 2, -2, 3, 1, -3, -1), 
+        fill = c("white", "blue", "green", "blue", "blue", "blue", "green"))) %>% 
+    add_edge(
+      from = 1,
+      to = 2,
+      edge_aes = edge_aes(
+        label = "0.5"
+      )) %>% 
+  add_edge(
+      from = 1,
+      to = 3,
+      edge_aes = edge_aes(
+        label = "0.5", 
+        color = "red"
+      )) %>% 
+  add_edge(
+      from = 2,
+      to = 4,
+      edge_aes = edge_aes(
+        label = "0.5"
+      )) %>% 
+  add_edge(
+      from = 2,
+      to = 5,
+      edge_aes = edge_aes(
+        label = "0.5"
+      )) %>% 
+  add_edge(
+      from = 3,
+      to = 6,
+      edge_aes = edge_aes(
+        label = "0.5"
+      )) %>% 
+  add_edge(
+      from = 3,
+      to = 7,
+      edge_aes = edge_aes(
+        label = "0.5",
+        color = "red"
+      )) 
+render_graph(tree)
+
+
+```
+
+
+
+### Question 3
+
+Moving from odds to probability:
+
+Given 3/1 odds, we should be able to convert to probability using the given formula on page 49, which should be 75%
+
+```{r}
+(3/1) / (1+ (3/1))
+```
+
+The odds version of Bayes' rule has three parts:
+
+The first part, which is the outcome, the posterior odds. This is the result of conditioning.
+
+The second part, which is the likelihood ratio: This is most easily understood for me in the context of a disease. The numerator would be the likelihood that you test positive for a disease, given you have the disease, and the denominator is the likelihood that yhou test positive for a disease, given that you don't have the disease.
+
+The third part of the equation is the prior odds (the likelihood that you have the disease by the likelihood you don't have the disease)
+
+We're moving from a more general estimate of disease-likelihood to a more specific (and helpful) estimate.
+
+
+### Question 4
+
+a. 
+
+```{r}
+
+fair_coin <- 1/2
+biased_coin <- 3/4
+heads <- 5
+
+fair_coin^heads * 1/2 / (fair_coin^3 * 1/2 + biased_coin^heads * 1/2)
+```
+I just changed the value of heads until the outcome dropped below 10%. I'm sure there is a less-brutish way to do this, I'll return to this later and try to be more refined if I have time.
+
+b.
+
+```{r}
+
+fair_coin <- 1/2
+biased_coin <- 3/4
+heads <- 7
+
+fair_coin^heads * 1/2 / (fair_coin^3 * 1/2 + biased_coin^heads * 1/2)
+```
+
+c.
+
+```{r}
+fair_coin <- 1/2
+biased_coin <- 1/4
+tails <- 3
+
+fair_coin^tails * 1/2 / (fair_coin^3 * 1/2 + biased_coin^tails * 1/2)
+```
+
+### Question 5
+
+a. Specificity: The probability of a negative test, given the person doesn't have a disease. This is associated with the true-negative rate of a test.
+
+b. Sensitivity: The probability of a positive test, given the person does have the disease. This is associated with the true-negative rate of a test.
+
+c. 
+```{r}
+
+(.9 * .01)/(.9 * .01 + .05 * .99)
+
+
+```
+
+The probability that Fred has the disease given that he tested positive is ~ 15%
+
+d. 
+
+```{r}
+
+(.95 * .05)/(.95 * .05 + .05 * .95)
+
+
+```
+50% Is this right? This is a massive jump. I feel like my numbers are in the right places. Probability has broken me and nothing makes sense anymore.
+
+e. 
+
+```{r}
+tree <-
+    create_graph() %>% # initiate graph
+    add_n_nodes(
+      n = 7, 
+      type = "path",
+      label = c("10,000 People", "9,500 People", "500 People", "475 People", "9,025 People", "25 People", "475 People"), # Labels for each node
+      node_aes = node_aes(
+        shape = "circle",
+        height = 1,
+        width = 1,
+        x = c(0, 3, 3, 6, 6, 6, 6), # Just the heights of each node (so it looks like a tree)
+        y = c(0, 2, -2, 3, 1, -3, -1))) %>% 
+    add_edge(
+      from = 1,
+      to = 2,
+      edge_aes = edge_aes(
+        label = "healthy"
+      )) %>% 
+  add_edge(
+      from = 1,
+      to = 3,
+      edge_aes = edge_aes(
+        label = "diseased"
+      )) %>% 
+  add_edge(
+      from = 2,
+      to = 4,
+      edge_aes = edge_aes(
+        label = "Test Positive"
+      )) %>% 
+  add_edge(
+      from = 2,
+      to = 5,
+      edge_aes = edge_aes(
+        label = "Test Negative"
+      )) %>% 
+  add_edge(
+      from = 3,
+      to = 6,
+      edge_aes = edge_aes(
+        label = "Test Negative"
+      )) %>% 
+  add_edge(
+      from = 3,
+      to = 7,
+      edge_aes = edge_aes(
+        label = "Test Positive"
+      )) 
+render_graph(tree)
+
+
+
+```
+
+### Question 6
+
+An example of the prosecutor's fallacy:
+
+I walk outside of my house and I see a black mark on the sidewalk. Because I see this I assume that lightning must have struck that spot. This is the prosecutor's fallacy because if I considered the fact that it is very unlikely that lightning struck that spot to begin with, I wouldn't have come to the conclusion that the mark was caused by lightning.
+
+I also think Steve's (rather morbid) example about his mom not picking up the phone is an example of the prosecutor's fallacy.

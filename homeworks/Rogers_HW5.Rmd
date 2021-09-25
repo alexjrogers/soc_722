@@ -1,0 +1,490 @@
+---
+title: "Rogers_HW5"
+author: "Alex Rogers"
+date: "9/21/2021"
+output: html_document
+---
+
+
+
+
+### 1.5 Exercises
+
+
+##### Exercise 1.1
+
+a. The prior information for Leslie's chocolate milk story might be that milk is white and comes from white cows, and that chocolate milk is brown so it must come from brown cows.
+
+b. The incoming data was that chocolate syrup exists (and likely that it can be mixed with milk to create chocolate milk), thus rendering her original assumption that chocolate milk comes from brown cows unlikely.
+
+c. The updated conclusion is that chocolate milk is made with chocolate syrup, and not that it comes from brown cows.
+
+##### Exercise 1.2
+
+a. I thought grad school would be easy, then I went to grad school and now I don't think it will be easy.
+
+b. I tried to feed my cat new food and he didn't like it, so I kept trying day after day. He definitely doesn't like it.
+
+##### Exercise 1.3
+
+![](C:\Users\alexr\Pictures\tofu.png)
+
+
+##### Exercise 1.4
+
+![](C:\Users\alexr\Pictures\mmos.png)
+
+
+##### Exercise 1.5
+
+![](C:\Users\alexr\Pictures\bayes.png)
+
+
+##### Exercise 1.6
+
+a. From a frequentist perspective, the question being answered in testing the hypothesis is something like "was I as qualified for the job as I thought I was?". The frequentist perspective assumes the chances to get the job are the same the next time you apply.
+
+b. From a Bayesian perspective, the question is more like "was I the best fit for the job, given the pool of candidates"
+
+c. I'd honestly rather understand if at a base I was as qualified as I thought I was, so a frequentist answer. Though perhaps it would be helpful to know more about who actually got the job, in order to model those behaviors / experiences.
+
+
+##### Exercise 1.7
+
+a. I know a lot about Slay the Spire
+b. I hypothesize that Slay the Spire gets more difficult the longer you play it, until a point where it tends to only get easier.
+c. This hypothesis is based on my own experience playing the game, as well as observing others.
+d. I think this is a frequentist perspective, it's based on seeing the same result of something over and over.
+
+##### Exercise 1.8
+
+a. Bayesian statistics is useful because it gives us a new frame from which to make decisions, change our minds, and think critically.
+b. Similarities between Bayesian and Frequentist statistics include using data to try to understand some phenomenon in the world. Using samples to understand something about a larger population, and more.
+
+
+
+
+### 2.5 Exercises
+
+
+```{r}
+library(easypackages)
+libraries("bayesrules", "tidyverse", "janitor")
+data("fake_news")
+
+```
+
+
+##### Exercise 2.1 (Comparing the prior and posterior)
+
+a. P(B|A) > P(B)
+b. P(B|A) < P(B) (assuming the 0 degree day in january was yesterday)
+c. P(B|A) > P(B)
+d. P(B|A) < P(B) (hastags are lame and for boomers)
+
+##### Exercise 2.2 (Marginal, conditional, or joint?)
+
+a. P(B|A) = .73 (conditional probability)
+b. P(A) = 0.2 (Marginal probability? prior probability)
+c. P(D) = .15 (Marginal probability? prior probability)
+d. P(D|C) = .91 (conditional probability)
+e. P $F \cap E$ = .38 (joint probability)
+f. P(E|F) = .95 (conditional probability)
+
+
+##### Exercise 2.3 (Binomial practice)
+
+According to section 2.3.2 the binomial model is appropriate when:
+(1) "The outcome of any one event doesn't influence the outcome of another (the outcomes are independent)
+(2) Outcome probabilities don't change as events occur
+
+a. 
+
+
+##### Exercise 2.4 (Vampires?)
+
+P(V) = .05 (prior)
+
+
+Likelihood ratio : .7/(.03)
+
+Solving for P(V|S)
+
+
+```{r}
+
+((.05)*(.7/(.03))) / (.05)
+# I can't wrap my head around what the denominator (normalizing constant should be)
+
+```
+
+
+trying again after doing the rest of the hw, this should be easier...
+
+P(A|B) (Vampires exist | sparkle)
+
+.05 * (.7/(.03)) / .05
+
+```{r}
+
+.05 * (.7/(.03)) / .05
+
+
+```
+
+
+No idea if this makes sense via intuition but I think this was the answer when we went over it in class.
+
+##### Exercise 2.5 (Sick trees)
+
+a. P(mold) = .18
+b. P(map | mold) = .8
+   P(map | mold^c) = .1 ??? trying later
+
+
+```{r}
+#trying to make a data frame so I don't need to deal with remembering what I'm calling the variables
+
+tree <- data.frame(type = c("elm", "maple", "other"))
+
+prior <- c(.18, .18, .18)
+
+of_infected <- c(.15, .8, .05)
+
+of_uninfected <- c(.2, .1, .7)
+```
+
+```{r}
+
+# trying a simulation to see if I'm setting up anything useful
+
+infected_sim <- sample_n(tree, size = 10000,
+                         weight = of_infected, replace = TRUE)
+
+
+```
+
+
+```{r}
+
+#does my output match expectation? (that a majority of infected are maple)
+
+ggplot(infected_sim, aes(x = type)) +
+  geom_bar()
+
+#ok
+```
+
+
+I still have no idea how to answer part B though. asking for help...
+
+Okay so a peer recommended using the total probability formula, that makes sense. These are really hard when intuition doesn't tell me where to start.
+
+so, the probability that the tree is maple should equal P(maple,mold) + P(maple,mold^C) 
+
+
+```{r}
+
+(.18 * .8) + (.82 * .1) 
+
+
+```
+
+
+b. P(maple) = .226
+
+
+c. what is P(A|B) : mold given maple
+
+
+
+need to figure out likelihood, P(B|A) maple, given mold
+
+maple given mold is .8
+
+so the formula I think is:
+
+P(A|B) = (.18 * .8) / .18
+
+this just cancels out? is this right? I'm not including the .226 probability that the tree is maple which I think is necessary, looking at the formula for posterior probability again...
+
+P(A|B) = (.18 * .8) / .226
+
+```{r}
+
+(.18 * .8) / .226
+
+```
+
+So if I've set this up right the probability that a tree has mold, given that it is maple, is about .64. I think this follows intuition
+
+
+d. knowing that a tree is maple significantly increases the probability that it has mold
+
+
+##### Exercise 2.6 (Restaurant ratings)
+
+
+Prior probability of liking restaurant: P(A) = .7
+
+We want P(A|B) (likes | fewer)
+
+To determine this we need,
+
+prior probability (.7)
+likelihood (fewer | likes)
+prior for (.3)
+
+So this isn't exactly giving me the answer of what we're missing, maybe if I just try to computer P(A|B) (likes | <4) I'll stumble on what I'm missing.
+
+P(A|B) = .7 * (likelihood that it has fewer that 4, given that she like it). So I think what we're missing is the probability that a restaurant she visits has less than 4 stars generally
+
+##### Exercise 2.7 (Dating app)
+
+P(A) = .08
+
+a. (.08 * .2) + (.92 * .1)
+
+```{r}
+(.08 * .2) + (.92 * .1)
+```
+
+b. P(A|B) (right | nb)
+    likelihood (nb | right)
+
+.08 * (.2) / (.108)
+
+```{r}
+
+.08 * (.2) / (.108)
+
+
+```
+
+##### Exercise 2.8 (Flight Delays)
+
+
+a. P(A) = .15 (prior delayed)
+
+P(A|B) (delayed | morning)
+
+.15 * (morning | delayed) (.4)
+
+```{r}
+
+(.15 * .4) / .3
+
+
+```
+
+b. P(A|B) (morning | delayed^C)
+
+.3 * (delayed^C | morning) .6
+
+```{r}
+
+(.3 * .6) / .85
+
+
+```
+
+##### Exercise 2.9 (Good mood, bad mood)
+
+a. 
+
+```{r}
+#this isn't working, saving and trying later
+#texts <- c("0 texts", "1-25 texts", "46+ texts")
+#moods <- c("good mood", "bad mood")
+
+#mood_data <- data.frame(moods, texts)
+```
+
+
+b. .4 (prior probability)
+
+c. P (A|B) (46+ texts | good mood)
+
+so... P(46+) = (.4 * .11) + (.6 * .01)
+
+P(46+) = 
+
+```{r}
+
+(.4 * .11) + (.6 * .01)
+
+
+```
+
+```{r}
+
+(.05 * .11) / .4
+
+```
+
+I'm not sure if this part of the problem is hard or if it's just worded confusingly.
+
+This asking what the likelihood is of getting 46+ texts, given they're in a good mood, so I think it's just .11
+
+d. P(A|B) (good mood | 46+)
+
+
+(.4 * .11) / .05
+
+```{r}
+
+(.4 * .11) / .05
+
+```
+
+This one is a lot harder to judge if it seems right based on intuition, but I think it makes sense because there is only a .01 chance they were in a bad mood with 46+ texts
+
+
+##### Exercise 2.10 (LGBTQ students: rural and urban)
+
+a. (.915 * .105) + (.085 * .1)
+
+```{r}
+
+(.915 * .105) + (.085 * .1)
+
+
+```
+
+this makes sense
+
+b. P(A|B) (rural | LGBTQ)
+
+(.085 * .1) / .104575
+
+```{r}
+
+(.085 * .1) / .104575
+
+
+```
+This make sense, I expected it to be around 8% because the probability of being LGBTQ doesn't change much between rural and urban
+
+
+c. P(A|B^C) (rural | LGBTQ^C)
+
+P(A) = .085 
+P(B^C) = 1 - 0.104575 = 0.895425
+P(NQ) = 0.895425
+
+(.085 * .9) / 0.895425
+
+```{r}
+
+(.085 * .9) / 0.895425
+
+```
+
+I think this make sense for basically the same reason part b made sense.
+
+
+### 2.5.4 Simulation exercises
+
+##### Exercise 2.17 (Sick trees redux)
+
+
+P(A|B) (mold | maple)
+
+
+
+
+```{r}
+
+
+tree <- data.frame(type = c("maple infected", "maple uninfected"))
+
+
+
+maple_infected <- c(.64)
+
+maple_uninfected <- c(.36)
+
+
+```
+
+```{r}
+
+
+#maple_sim <- sample_n(tree, size = 10000,
+                       #  weight = maple_infected, replace = #TRUE)
+
+# okay so this is obviously not right because it just spit out 1000 "maples" but I actually laughed when this happened so I'm leaving it in as a reminder of the one time stats brought me joy
+```
+
+```{r}
+
+maple_sim <- sample_n(tree, size = 10000, replace = TRUE, weight = c(maple_infected, maple_uninfected))
+
+
+```
+
+```{r}
+ggplot(maple_sim, aes(x = type))+
+  geom_bar()
+```
+
+
+This is so ugly and yet I am so damn proud of it.
+
+##### Exercise 2.21 (Medical tests)
+
+P(B) = .03 (has disease)
+
+P(A|B) = (Positive test | have disease) = (.93)
+
+P(Positive test | disease^C) = (.07)
+
+
+P(disease | positive)
+
+
+
+need the total positive test rate:
+
+(.03 * .93) + (.97 * .07)
+
+```{r}
+
+(.03 * .93) + (.97 * .07)
+
+
+```
+(.03 * .93) / 0.0958
+
+
+```{r}
+
+(.03 * .93) / 0.0958
+
+```
+
+Okay so this would mean that the probability that a person has the disease, given that they test positive for it, is about 30%. I think this makes sense, now to simulate it.
+
+```{r}
+
+disease <- data.frame(type = c("yes disease", "no disease"))
+
+
+
+yes_disease <- c(0.2912317)
+
+no_disease <- c(0.7087683)
+
+disease_sim <- sample_n(disease, size = 10000, replace = TRUE, weight = c(yes_disease, no_disease))
+
+
+```
+
+```{r}
+
+ggplot(disease_sim, aes(x = type))+
+  geom_bar()
+
+
+```
+

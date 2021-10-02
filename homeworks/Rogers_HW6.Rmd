@@ -1,0 +1,1020 @@
+---
+title: "Rogers_HW6"
+author: "Alex Rogers"
+date: "9/28/2021"
+output: html_document
+---
+
+```{r}
+
+library(bayesrules)
+library(tidyverse)
+
+```
+
+
+## Pre-exercise notes
+
+- don't need to know integrals 
+- kernel, maybe unnecessary it's just a shape?
+  a flat line, i have no idea - a supernova in 1/2 century 
+  flat line might be beta 1,1
+  
+  
+  - class notes
+  
+  - quantile(rbeta)(10000, 81, 95))
+  -
+  rbeta(10000, 1, 5) |> sd()
+  
+ ---- rbeta(100,50,50)
+ ----- x <- rbeta(100,50,50)
+ - quantile(x, c(.1, .5, .9))
+  
+  
+```{r}
+
+#helpful plot_beta_binomial
+
+
+#p <- 75
+#n <- 150
+
+#quantile(rbeta(10000, p*n, (1-p*n) c(.05, .95)))
+
+```
+  
+  
+```{r}
+
+#3.1.2 practicing plotting beta
+
+
+plot_beta(9, 11)
+plot_beta(27,33)
+plot_beta(45, 55)
+
+
+```
+  
+  Based on my understanding so far, it seems that the second plot Beta (27,33) is the closest to having a potential low of 25 and a potential high of 65. The third plot Beta(45,55) seems to have close potential low of ~28? and high of ~62?
+
+This seems like a good thing to ask about on thursday
+  
+  
+  
+```{r}
+
+#playing around with beta-binomial simulation
+
+
+set.seed(84735)
+
+michelle_sim <- data.frame(pi = rbeta(10000, 45, 55)) |> 
+  mutate(y = rbinom(10000, size = 50, prob = pi))
+
+ggplot(michelle_sim, aes(x = pi, y = y))+ #not understanding what y = y signifies here
+  geom_point(aes(color = (y == 30)), size = .1)
+
+
+```
+  
+  
+```{r}
+
+michelle_posterior <- michelle_sim |> 
+  filter(y == 30)
+
+
+ggplot(michelle_posterior, aes(x = pi))+
+  geom_density()
+
+
+```
+  
+  
+  
+```{r}
+
+michelle_posterior |> 
+  summarize(mean(pi), sd(pi))
+
+
+```
+  
+  
+
+```{r}
+
+nrow(michelle_posterior)
+
+
+```
+
+
+```{r}
+
+#milgram experiment practice
+
+(1 + 26) / (1 + 10 + 40)
+
+
+plot_beta(27,24)
+
+
+plot_beta_binomial(1, 10, 26, 40)
+```
+
+
+
+  
+## Exercises
+
+
+### 3.8.1 Practice: Beta prior models
+
+
+##### Exercise 3.1 (Tune your Beta prior: Take I)
+
+
+#### a.
+
+.4 probability for a job, ranging from 20% to 60%
+
+```{r}
+
+#poking around for values
+
+3 / (3+4)
+3 / (3+4.5)
+6 / (6+9)
+9 / (9+13.5)
+10.8 / (10.8+16.2)
+```
+
+```{r}
+
+#plotting some of the found values and seeing what gives potential lows of .2 and highs of .6
+plot_beta(3,4.5)
+plot_beta(6,9)
+plot_beta(9, 13.5)
+plot_beta(10.8, 16.2)
+
+
+```
+
+
+It looks like Beta (10.8, 16.2) gets us decently close. I'm not sure how close we need to be, I also don't know where we visualize the cutoff. I think there is something about variability I might be missing here.
+
+
+#### b.
+
+```{r}
+
+# poking around for values redux
+
+10/ (10+6)
+15 / (15+6)
+22 / (22+6)
+25 / (25+6)
+25 / (25+6.2)
+# this is an embarrassing showcase of my lack of algebraic intuition
+
+```
+```{r}
+
+#plotting betas, looking for .8 with .05 variance
+
+plot_beta(25, 6.2)
+plot_beta(50, 12.4)
+plot_beta(100, 24.8)
+plot_beta(150, 37.2)
+
+
+```
+
+Beta (150, 37.2) looks good to me
+
+
+#### c.
+
+Aunt Jo finds enough mushrooms about .9 of the time, as a range of .85 to 1
+
+```{r}
+
+9 / (9+1)
+
+
+```
+
+
+```{r}
+
+plot_beta(9,1)
+plot_beta(18,2)
+plot_beta(27,3)
+
+
+```
+
+#### d.
+
+Sal has no idea what the outcome of their interview will be:
+
+
+```{r}
+
+
+
+plot_beta(1, 1)
+```
+
+I'm reading through the homework before submitting it and with my newfound knowledge I realized there's a better way to represent this (the idea that they either loved sal or hated them)
+
+```{r}
+
+plot_beta(.5, .5)
+
+
+```
+
+
+##### Exercise 3.2 (Tune your Beta prior: Take II)
+
+
+#### a. 
+
+
+A .8 chance of getting a full night sleep, between .7 and .9
+
+```{r}
+
+8 / (8+2)
+
+
+```
+
+
+```{r}
+
+plot_beta(16,4)
+
+
+```
+
+```{r}
+
+16*4
+4*4
+
+
+```
+
+```{r}
+
+plot_beta(144, 36)
+
+
+```
+
+#### b.
+
+
+Test 90% accurate with .08 variance
+
+so... .9 with ranges from .82 to .98
+
+
+```{r}
+
+9/(9+1)
+
+
+```
+
+```{r}
+plot_beta(270,30)
+```
+
+#### c.
+
+
+Animal crossing, .85 with variation from .75 to .95
+
+```{r}
+
+17/(17+3)
+
+
+```
+
+```{r}
+
+plot_beta(68,12)
+
+
+```
+
+
+#### d.
+
+
+Bakery runs out of croissants, .3, unsure
+
+```{r}
+
+3/(3+7)
+
+
+```
+
+```{r}
+
+plot_beta(1.5,3.5)
+
+#weirdly, this doesn't seem to peak at .3 even though the math is correct:
+
+1.5/(1.5+3.5)
+```
+
+##### Exercise 3.3 (It’s OK to admit you don’t know)
+
+
+#### a.
+
+
+```{r}
+
+plot_beta(1, 1)
+
+
+```
+
+#### b.
+
+
+Is the mean .5? I'm finding this really hard to conceptualize without the slope of the line.
+
+After thinking some more this does make sense, and does follow the logic of having no prior information. It's like a coin flip, if we have no related prior information, any event is binary, either it will hapen or it won't.
+
+The standard deviation is:
+
+
+```{r}
+
+test <- ((1) / (4*3))
+sqrt(test)
+
+
+```
+
+#### c.
+
+
+A smaller standard deviation is easier to intuit for me. If alpha and beta are large numbers near each other, there should be a low standard deviation
+
+```{r}
+
+plot_beta(500,500)
+
+
+```
+
+#### d.
+
+So then by the same logic a larger standard deviation might be something like:
+
+
+```{r}
+
+plot_beta(.8, .8)
+
+
+```
+
+##### Exercise 3.4 (Which Beta? Take I)
+
+I could easily drop these into plot_beta, but I'm going to try off intuition because that seems more useful?
+
+#### a.
+
+Beta(.5, .5)
+
+#### b.
+
+Beta(2,2)
+
+#### c.
+
+Beta(6,2)
+
+#### d.
+
+Beta(1,1)
+
+#### e.
+
+Beta(.5,6)
+
+#### f.
+
+Beta(6,6)
+
+##### Exercise 3.5 (Which Beta? Take II)
+
+#### a.
+
+Beta(1,.03)
+
+#### b.
+
+Beta(3,3)
+
+#### c.
+
+Beta(4,2)
+
+#### d.
+
+Beta(2,1)
+
+#### e. 
+
+Beta(5,6)
+
+#### f.
+
+Beta(6,3)
+
+
+##### Exercise 3.6 (Beta properties)
+
+#### a.
+
+
+Smallest mean:
+
+Intuition tells me (e) Beta(.5,6) because the mean on the distribution approaches 0. I expect the mean to be near 0
+
+```{r}
+
+.5/ (.5 + 6)
+
+
+```
+
+
+Largest mean:
+
+Intuition tells me (c) Beta(6,2) because the top of the curve is highest for that distribution
+
+```{r}
+6 / (6+2)
+```
+
+
+
+
+#### b.
+
+Which model has the smallest mode:
+
+The formula for mode is (a - 1) / (a + b -2)
+
+But the book stipulates that this is when a,b > 1
+
+What do I do then when a or b are < 1 ?
+
+
+Intuition leads me to believe these answers will be the same as the mean, with Beta(.5, 6) having the smallest mode (unless the fact that a < 1 messes something up)
+
+```{r}
+
+
+(.5 -1) / (.5 + 6 -2)
+
+```
+
+
+Weird, wasn't this the value we were getting incorrectly in class?
+
+Trying something different:
+
+```{r}
+
+summarize_beta(.5, 6)
+
+```
+
+Asking in slack...
+
+
+Largest mode:
+
+I think by intuition I would guess (c) has the largest mode Beta(6,2)
+
+```{r}
+(6-1) / (6 + 2 - 1)
+```
+
+
+#### c.
+
+Smallest standard deviation:
+
+This one is harder for me to intuit visually. I'm thinking (c) Beta(6,2), but I'm wondering about (d) Beta(1,1)
+
+
+```{r}
+
+var_min <- (6*2) / ((64) * (9))
+
+sqrt(var_min)
+
+
+
+```
+
+
+Largest standard deviation:
+
+
+I think this should be (a) Beta(.5, .5)
+
+```{r}
+
+var_max <- (.5 * .5) / ((1) * (2))
+
+sqrt(var_max)
+
+
+```
+
+##### Exercise 3.7
+
+
+
+#### a. 
+
+```{r}
+plot_beta(.5, .5)
+plot_beta(1, 1)
+plot_beta(2, 2)
+plot_beta(6, 6)
+plot_beta(6, 2)
+plot_beta(.5, 6)
+
+
+```
+
+
+#### c.
+
+```{r}
+#is there a more efficient way to do this other than copy pasting plot_beta and summarize_beta? seems there must be
+
+summarize_beta(.5, .5)
+summarize_beta(1, 1)
+summarize_beta(2, 2)
+summarize_beta(6, 6)
+summarize_beta(6, 2)
+summarize_beta(.5, 6)
+
+
+
+```
+
+So it looks like Beta(.5, 6) has the smallest SD, I guess because most of the values are clustered around 0?
+
+I was right about the largest SD.
+
+As for mean, it looks like everything but Beta(6,2 shares a mean of .5). This makes sense when reconsidering the shapes of the distributions
+
+
+
+#### Exercuse 3.9 (Interpreting Priors)
+
+
+#### a.
+
+
+Beta(8, 2)
+Beta(1, 20)
+
+```{r}
+
+
+summarize_beta(8, 2)
+summarize_beta(1, 20)
+
+
+```
+
+
+#### b.
+
+
+```{r}
+
+plot_beta(8, 2)
+plot_beta(1, 20)
+
+```
+
+
+#### c. 
+
+
+If a salesperson is from North Dakota they have a prior assumption that about 80% of people will call the fizzy drink pop, whereas a salesperson from Louisiana expects that basically nobody, or very few people, will call the fizzy drink "pop" (more specifically, they might say they expect most people to not say "pop", but that maybe up to say, 15% or so may say it). 
+
+### 3.8.2 Practice: Beta-Binomial models
+
+
+
+
+##### Exercise 3.10 (Different priors, different posteriors)
+
+A poll of 50 US residents, 12 (.24) prefer the term "pop".
+
+Prior: ND : (8, 2)
+       LA : (1, 20)
+       
+
+
+#### a.
+
+Posterior ND:
+
+```{r}
+
+(8 + 12) / (8 + 2 + 50)
+
+#does this make sense? what was the ND person's prior mean?
+```
+
+```{r}
+
+summarize_beta(8, 2)
+
+#okay so yes this makes sense, the low results from the US poll corrected the salesperson's expectation
+
+
+```
+
+posterior LA Beta(1, 20):
+
+```{r}
+
+(1 + 12) / (1 + 20 + 50)
+
+
+```
+
+```{r}
+
+summarize_beta(1, 20)
+
+plot_beta(1, 20)
+```
+
+
+This also makes sense, the salesperson had originally underestimated how many people use pop, and thus the posterior should have a higher mean in light of the new information.
+
+
+
+#### b.
+
+I already did some of this in trying to understand part (a)
+
+```{r}
+
+#beta binom for ND:
+
+plot_beta_binomial(8, 2, 12, 50)
+
+
+```
+
+
+
+```{r}
+
+#beta binom for LA
+
+plot_beta_binomial(1, 20, 12, 50)
+
+
+```
+
+#### c.
+
+Both salespeople had to adjust their understanding of how many people use "pop" as a result of the poll. They both had to make pretty significant adjustments to their expectations.
+
+
+##### Exercise 3.11 (Regular bike ridership)
+
+
+#### a.
+
+```{r}
+
+#okay first what is 5/22?
+5/22
+#okay so we're looking for a binom with mean .25 and mode .23
+
+
+
+summarize_beta(6,18)
+
+#got it on the second try! The mode is actually exactly correct. cool.
+
+plot_beta(6, 18)
+
+
+```
+
+
+
+#### b.
+
+```{r}
+
+plot_beta_binomial(6, 18, 15, 50)
+#the posterior model as indicated (green)
+
+```
+
+#### c.
+
+```{r}
+
+#am I supposed to do this by hand? I hope not.
+
+summarize_beta_binomial(6, 18, 15, 50)
+
+
+```
+
+
+#### d.
+
+
+It seems the posterior more closely follows the data, both in overlap of area as well as variance. (am I thinking about this right?)
+
+
+##### Exercise 3.12 (Same-sex marriage)
+
+
+#### a.
+
+
+
+```{r}
+
+summarize_beta(12, 68)
+plot_beta(12, 68)
+
+```
+
+#### b.
+
+```{r}
+
+plot_beta_binomial(12, 68, 30, 90)
+
+
+```
+
+
+#### c.
+
+```{r}
+
+summarize_beta_binomial(12, 68, 30, 90)
+
+
+```
+
+#### d.
+
+It seems like the posterior model reflects the prior and the data pretty similarly. It looks like it's closer to the prior in terms of variability, but the data in terms of range of values
+
+
+##### Exercise 3.13 (Knowing someone who is transgender)
+
+Sylvia expects between .35 and .6, mean and/or mode should probably be  around .475
+
+
+#### a.
+
+
+```{r}
+summarize_beta(36, 39)
+
+plot_beta(39, 39)
+
+# I think I can call this... close enough
+
+```
+
+#### b.
+
+
+```{r}
+
+plot_beta_binomial(36, 39, 80, 200)
+
+
+```
+
+#### c.
+
+```{r}
+
+summarize_beta_binomial(36, 39, 80, 200)
+
+
+```
+
+#### d.
+
+As I expected, Sylvia overestimated how many people in the US are aware that they know someone transgender, so the posterior model significantly adjusts Sylvia's expectation.
+
+
+##### Exercise 3.14 (Summarizing the Beta-Binomial: Take I)
+
+
+
+I think this formula from (3.10) of the book might help: 
+
+pi | (Y = y) ~ Beta(a + y, B + n - y)
+
+pi | (Y = y) ~ Beta(2 + y, 3 + n - y)
+
+yeah I don't know how to or if I can solve for this
+
+Maybe guess and check / intuition is the way to go here.
+
+
+```{r}
+
+plot_beta(2, 3)
+plot_beta(11, 24)
+
+
+```
+
+Okay so looking at the prior and posterior distributions, as well as the code outputs, it looks like variance and SD decreased pretty significantly, and the mean decreased a bit. What data could cause this? The data should probably be near the prior, around a 1/3 hit rate, perhaps a bit lower.
+
+```{r}
+
+summarize_beta_binomial(2, 3, 9, 30)
+
+
+```
+
+I'm pretty happy with that. Only took about 100 guesses.
+
+
+##### Exercise 3.15 (Summarizing the Beta-Binomial: Take II)
+
+
+```{r}
+
+# plotting the prior and posterior again, this is a helpful starting place for my intuition
+
+plot_beta(1, 2)
+plot_beta(100, 3)
+
+
+```
+
+Right, so this was some very convincing data. Also, we didn't really have much of an idea of what to expect beforehand, except that the event was probably more likely to not occur than occur.
+
+
+```{r}
+
+summarize_beta_binomial(1, 2, 99, 100)
+
+
+```
+
+second try!
+
+
+##### Exercise 3.16 (Plotting the Beta-Binomial: Take I)
+
+
+
+#### a.
+
+In the prior model, we were near certain of a positive result. 
+
+The likelihood told us that we overestimated in our prior. The likelihood of a positive result was around .25 (not exactly but easier to think about), from maybe .15 to .35
+
+
+#### b.
+
+The posterior model agrees more with the likelihood in distribution, but is nearer the prior in probability.
+
+
+#### c.
+
+
+Okay, so I think what we want here a very strong alpha and beta for the prior, and is data that is convincing, but a small sample size, indicating an overestimate in the prior. 
+
+
+```{r}
+
+plot_beta_binomial(90, 2, 12, 50)
+
+
+```
+
+Took a few tries. This is not perfect but I think decently close
+
+
+
+##### Exercise 3.17 (Plotting the Beta-Binomial: Take II)
+
+
+#### a.
+
+So our prior is not strong, we basically think there's about a 50/50 success rate, but that's between .25 and .75. I think this is Beta (2, 2)
+
+```{r}
+plot_beta(2, 2)
+
+
+```
+
+Okay not quite, right track though.
+
+
+```{r}
+
+plot_beta(1.5, 1.5)
+
+```
+
+Okay, I think we have our prior alpha and beta. I don't know what to do to squish it though. Is this just a visual issue because I don't have likelihood and posterior in or am I doing something wrong?
+
+
+
+So as I was saying, prior is .5 from .25 to .75, we don't have a strong prior assumption.
+
+The likelihood after the test gives us some convincing data, we're much less likely to see an event occur than we imagined.
+
+
+#### b.
+
+
+The posterior agrees strongly with the likelihood. This makes sense because the prior was not strong. I don't think we even need a ton of data to make this happen.
+
+
+#### c.
+
+
+
+```{r}
+
+plot_beta_binomial(2.5, 2.5, 6, 40)
+
+
+```
+
+Okay, good news is this looks decent. Bad news is there's definitely something wrong with my prior and I don't know how to fix it. Hopefully we can go over this in class.
+
+This took a ton of tinkering and still isn't really right
+
+
+##### Exercise 3.18 (More Beta-Binomial)
+
+
+#### a.
+
+
+```{r}
+summarize_beta_binomial(3, 3, 30, 40)
+plot_beta_binomial(3, 3, 30, 40)
+
+
+```
+
+#### b.
+
+
+
+```{r}
+
+summarize_beta_binomial(3, 3, 15, 20)
+plot_beta_binomial(3, 3, 15, 20)
+
+
+
+```
+
+#### c.
+
+
+The data are proportional to each other, which is why the two posteriors have basically the same mean. But because Patrick collected more data, their results have less variance.

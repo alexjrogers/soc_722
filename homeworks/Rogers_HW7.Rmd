@@ -1,0 +1,1128 @@
+---
+title: "Rogers_HW7"
+author: "Alex Rogers"
+date: "10/4/2021"
+output: html_document
+---
+
+
+### Chapter Notes & Examples
+
+
+```{r}
+library(ggplot2)
+library(bayesrules)
+library(tidyverse)
+library(janitor)
+
+
+```
+
+
+
+```{r}
+
+#4.1 Different Priors, different posteriors
+
+
+data("bechdel")
+
+set.seed(84735)
+
+bechdel_20 <- bechdel |> 
+  sample_n(20)
+
+bechdel_20 |> 
+  head(3) #what is this actually doing?
+
+
+
+```
+
+
+```{r}
+
+bechdel_20 |> 
+  tabyl(binary) |> 
+  adorn_totals("row")
+
+
+```
+
+
+```{r}
+
+plot_beta_binomial(45000, 44000, 1000, 4000)
+
+
+```
+
+
+### Exercises
+
+
+
+##### Exercise 4.1 (Match the prior to the description)
+
+
+going to try to do these on intuition, I could easily plot these with plot_beta and find the right answer, but that seems less useful.
+
+#### a.
+
+Beta(1.8, 1.8)
+Centering on .5
+
+#### b.
+
+Beta(3, 2)
+Somewhat favoring pi > .5
+
+#### c.
+
+Beta(1, 10)
+Strongly favoring pi < .5
+(I initially called this somewhat favors instead of stongly favors, but got suspicious and changed after plotting the distribution)
+
+#### d.
+
+Beta(1,3)
+Somewhat favoring pi < .5
+
+#### e.
+
+Beta(17, 2)
+Strongly favoring pi > .5
+
+##### Exercise 4.2 (Match the plot to the code)
+
+
+
+Seems like (e) should be correct. The prior should have some preference toward pi < .5, and the data should have about a .5 success rate.
+
+Checking...
+
+```{r}
+
+plot_beta_binomial(3, 8, 2, 4)
+
+
+```
+
+##### Exercise 4.3 (Choice of prior: gingko leaf drop)
+
+#### a.
+
+Ben says  that it is really unlikely:
+Beta(1.5, 10)
+
+#### b.
+
+Albert hates trees and has no idea:
+Beta(1, 1)
+
+#### c.
+
+Katie thinks based on last year, there is a very high chance:
+Beta(30, 5)
+
+#### d.
+
+Daryl thinks there's a decent chance, but he's somewhat unsure:
+Beta(4, 1.5)
+
+#### e.
+
+Scott thinks it probably won't happen, but he's somewhat unsure:
+Beta(1.5, 4)
+
+### 4.9.2 Practice: Different priors, different posteriors
+
+
+##### Exercise 4.4 (Choice of prior)
+
+```{r}
+
+plot_beta(1, 2)
+plot_beta(.5, 1)
+plot_beta(3, 10)
+plot_beta(2, .1)
+
+
+```
+
+Kimya thinks the shop is more likely closed, but isn't very sure.
+
+Fernando is pretty certain the shop is closed, but concedes there's a small chance it might be open.
+
+Ciara thinks there's probably between a 12 and 37 percent chance the shop is open.
+
+Taylor is extremely confident the shop is open.
+
+##### Exercise 4.5 Simulating the posterior
+
+
+Data (prior?) 3 / 7 days they were open.
+
+```{r}
+
+summarize_beta(1, 2)
+
+
+```
+
+
+Beta(1, 2) : Kimya's prior mean was .333
+
+
+```{r}
+
+#Calculating Kimya's posterior beta
+
+2 + 7 - 3
+
+
+```
+
+Beta (4, 6)
+
+```{r}
+
+
+#getting posterior mean
+summarize_beta(4, 6)
+
+
+```
+
+
+```{r}
+
+shop <- tibble(status = c("open", "closed"))
+
+
+
+
+```
+
+```{r}
+
+kimya <-  sample_n(shop, 5000, TRUE, weight = c(.375, .625))
+
+kimya_open <- filter(kimya, status == "open")
+nrow(kimya_open)
+
+kimya_closed <- filter(kimya, status == "closed")
+nrow(kimya_closed)
+
+```
+
+```{r}
+
+ggplot(data = kimya, mapping = aes(x = status)) +
+  geom_bar()
+
+
+```
+
+
+
+So I'm glad I took the time to finally figure out how filter and tibbles work, but I don't know if this is really what I need to do at all, the question is sort of vague.
+
+I don't know, maybe there's not a right answer, I'm going for it.
+Need to ask for help and come back to this.
+
+
+Okay got some help from the cohort. Recommendation is to use the simulation section from chapter 3 as a guide.
+
+#### Kimya
+
+```{r}
+
+#I feel like I sorta understand what this code is doing but not completely.
+kimya_sim <- data.frame(pi = rbeta(10000, 1, 2)) |> 
+  mutate(y = rbinom(10000, size = 7, prob = pi))
+
+
+```
+
+
+```{r}
+
+ggplot(kimya_sim, aes(x = pi, y = y)) +
+  geom_point(aes(color = (y == 3)), size = .1)
+
+
+```
+
+Mean ~ .3
+
+
+#### Fernando
+
+```{r}
+
+fernando_sim <- data.frame(pi = rbeta(10000, .5, 1)) |> 
+  mutate(y = rbinom(10000, size = 7, prob = pi))
+
+
+```
+
+```{r}
+
+ggplot(fernando_sim, aes(x = pi, y = y)) +
+  geom_point(aes(color = (y == 3)), size = .1)
+
+
+```
+
+
+Mean ~ .35
+
+#### Ciara
+
+```{r}
+
+ciara_sim <- data.frame(pi = rbeta(10000, 3, 10)) |> 
+  mutate(y = rbinom(10000, size = 7, prob = pi))
+
+
+```
+
+```{r}
+
+ggplot(ciara_sim, aes(x = pi, y = y)) +
+  geom_point(aes(color = (y == 3)), size = .1)
+
+
+
+```
+
+Mean ~ .28
+
+#### Taylor
+
+```{r}
+
+taylor_sim <- data.frame(pi = rbeta(10000, 2, .1)) |> 
+  mutate(y = rbinom(10000, size = 7, prob = pi))
+
+
+```
+
+
+```{r}
+
+ggplot(taylor_sim, aes(x = pi, y = y)) +
+  geom_point(aes(color = (y == 3)), size = .1)
+
+
+```
+
+
+
+Mean ~ .55
+
+##### 4.6 Identifying the Posterior
+
+```{r}
+
+# identifying the exact posterior model of pi
+
+# Kimya
+summarize_beta_binomial(1, 2, 3, 7)
+plot_beta_binomial(1, 2, 3, 7)
+
+
+```
+
+```{r}
+
+# Fernando
+summarize_beta_binomial(.5, 1, 3, 7)
+plot_beta_binomial(.5, 1, 3, 7)
+
+
+```
+
+```{r}
+
+# Ciara
+summarize_beta_binomial(3, 10, 3, 7)
+plot_beta_binomial(3, 10, 3, 7)
+
+
+```
+
+```{r}
+
+# Taylor
+summarize_beta_binomial(2, .1, 3, 7)
+plot_beta_binomial(2, .1, 3, 7)
+
+
+```
+
+Still need to check with others. I'm not sure I actually understand what this is asking me to do.
+
+Going through before submitting, I do understand this now.
+
+### 4.9.3 Practice: Balancing the data and prior
+
+
+##### Exercise 4.7 (What dominates the posterior?)
+
+
+#### a.
+
+```{r}
+
+summarize_beta_binomial(1, 4, 8, 10)
+
+
+```
+
+The data has more influence over the posterior. 
+ 
+#### b.
+ 
+```{r}
+
+summarize_beta_binomial(20, 3, 0, 1)
+
+
+```
+
+The prior has more influence over the posterior.
+ 
+#### c.
+ 
+```{r}
+
+summarize_beta_binomial(4, 2, 1, 3)
+
+
+```
+
+The prior and data have similar influence over the posterior.
+ 
+#### d.
+ 
+```{r}
+
+summarize_beta_binomial(3, 10, 10, 13)
+
+
+```
+
+The data has more influence over the posterior. 
+Turns out this was wrong, after visualization they are similar.
+ 
+#### e.
+ 
+```{r}
+
+summarize_beta_binomial(20, 2, 10, 200)
+
+
+```
+
+The data has more influence over the posterior.
+ 
+##### Exercise 4.8 (Visualizing the evolution)
+
+```{r}
+
+plot_beta_binomial(1, 4, 8, 10)
+plot_beta_binomial(20, 3, 0, 1)
+plot_beta_binomial(4, 2, 1, 3)
+plot_beta_binomial(3, 10, 10, 13)
+plot_beta_binomial(20, 2, 10, 200)
+
+```
+
+
+##### Exercise 4.9 (Different data: more or less sure)
+
+Prior Beta for preferring dogs to cats: Beta(7, 2)
+
+
+#### a.
+
+
+```{r}
+
+summarize_beta(7, 2)
+
+```
+
+Trying to do this without looking at the distribution...
+
+So we would expect about 78% of  people to prefer dogs, specifically between 65% and 91% (assuming most of the data points are ~ 1 standard deviation from the mean)
+
+```{r}
+
+#checking my assumptions based on the summarize_beta output
+
+plot_beta(7, 2)
+
+
+```
+
+Okay, looks fine, I think for how I was visuallizing this in my head though, thinking about standard deviation from the mode as opposed to the mean might lead to slightly more accurate description of what I'm conveying verbally.
+
+That would be: 86% of people, or 73% to 99%. Maybe these are just rhetorical / descriptive differences. Describing in terms of the mean seems a more accurate way to approach it per the data?
+
+#### b.
+
+Prior Beta(7, 2)
+Observed data Y = 19 of n = 20
+
+So we had a hit on 95% of those surveyed. This would reinforce our suspicion that there is a high probability of people preferring dogs. The mean might move slightly, perhaps toward 80 - 82%? our certainty should also increase, though not by much, because those these results are significant, there is a small sample size.
+
+```{r}
+# checking intuition
+
+plot_beta_binomial(7, 2, 19, 20)
+summarize_beta_binomial(7, 2, 19, 20)
+
+
+
+```
+
+Okay. So I'm not sure if I underestimated the pull of the data, I think what happened here actually is I overestimated the effect of the prior. I also think I may have factored the sample size in too much.
+
+What if...
+
+```{r}
+
+plot_beta_binomial(7, 2, 9, 10)
+
+
+```
+
+That's more what I was visualizing. So I think I overestimated the impact of the small sample size.
+
+#### c.
+
+Prior Beta(7,2)
+Observed Y = 1, n = 20
+
+This is basically just the inverse of the previous question. Though now the data is skewed toward what we didn't expect as opposed to what we did expect. I think as a result the prior will pull the posterior away from the likelihood.
+
+```{r}
+
+plot_beta_binomial(7, 2, 1, 20)
+
+
+```
+
+Seems I was right, cool.
+
+#### d.
+
+Prior Beta(7, 2)
+Observed Y = 10, n = 20
+
+Okay so we should see the mean decrease, these data agree with our prior more than Y = 1, n = 20, but much less than y = 19, n = 20, so I think we should see a pull on the posterior that is between the previous to beta distributions 
+
+```{r}
+
+plot_beta_binomial(7, 2, 10, 20)
+
+
+```
+
+cool.
+
+##### Exercise 4.10 (What was the data?)
+
+
+#### a.
+
+Prior Beta(.5, .5) Posterior Beta(8.5, 2.5)
+
+```{r}
+
+summarize_beta_binomial(.5, .5, 8, 10)
+
+
+```
+
+This took three tries, I tried y = 9, n = 10, as well as 10, 11, before landing on 8, 10
+
+#### b.
+
+Prior beta (.5, .5) Posterior Beta(3.5, 10.5)
+
+So we need low success rate, probably a similar sample size to previous data.
+
+```{r}
+
+summarize_beta_binomial(.5, .5, 3, 13)
+
+
+```
+
+Three tries again, started at 3, 11, then 3, 12
+
+#### c.
+
+Prior Beta(10, 1) Posterior Beta(12, 15)
+
+This one is a bit harder to think through. So we had decent confidence in the prior that we would mostly have successes, but in the posterior we're pretty sure we'll have less than half success rate.
+
+So we need some convincing data
+
+```{r}
+
+# trying 20 cases
+
+summarize_beta_binomial(10, 1, 7, 25)
+
+
+```
+
+
+```{r}
+
+#this one is hard, borrowing help from the visualization of the distributions
+
+plot_beta(10, 1)
+plot_beta(12, 15)
+
+
+```
+
+Okay so the mean actually landed around .5 The data are convincing enough to sway our mean, but we still have relatively low certainty... which I think means a small sample size, at extremes (like maybe only one or two successes)
+
+```{r}
+
+summarize_beta_binomial(10, 1, 2, 16)
+
+
+```
+Cool. Took a bit of tinkering and guess and check but that wasn't the worst. Maybe 10 tries.
+
+#### d.
+
+Prior Beta(8, 3) Posterior Beta(15, 6)
+
+```{r}
+
+plot_beta(8, 3)
+plot_beta(15, 6)
+
+```
+
+So the data basically aligned with our prior suspicions
+
+I don't think the data here have to be a large sample, just in line with the prior
+
+```{r}
+
+summarize_beta_binomial(8, 3, 7, 10)
+
+
+```
+
+Looking for posterior (15, 6)
+y = 5 n = 8 gives me Posterior Beta (13, 6)
+y = 6 n = 8 gives me Posterior Beta (14, 5)
+
+I don't think you can have a partial success here so I'm confused.
+
+Okay, played around with it some more, y = 7, n = 10 works.
+
+I think I just confused myself. I was looking for mean ~ .75 instead of mean ~ .7
+
+#### e.
+
+Prior Beta (2, 2)
+Posterior Beta (5, 5)
+
+Okay I think I can do this one almost first try. We definitely got a 50 / 50 success rate. We are not that much more convinced. I think this was like y = 2 n = 4
+
+```{r}
+
+summarize_beta_binomial(2, 2, 3, 6)
+
+
+```
+
+Okay, second try. Still happy with my intuition.
+
+
+#### f.
+
+Prior Beta (1, 1)
+Posterior Beta (30, 3)
+
+So we went from no idea to almost certain an event occurs.
+We have some very convincing data.
+
+```{r}
+
+summarize_beta_binomial(1, 1, 29, 31)
+
+
+```
+
+Started at 99 of 100. Took about five guesses to tune.
+
+##### (Different data, uninformative prior)
+
+
+#### a.
+
+10 of 13
+```{r}
+
+plot_beta_binomial(1, 1, 10, 13)
+summarize_beta_binomial(1, 1, 10, 13)
+
+
+```
+
+#### b.
+
+0 of 1
+```{r}
+
+plot_beta_binomial(1, 1, 0, 1)
+summarize_beta_binomial(1, 1, 0, 1)
+
+
+```
+
+Interesting representation. Since we had effectively no prior, the posterior and likelihood completely overlap even with almost no data observed.
+
+#### c.
+
+100 of 130
+```{r}
+
+plot_beta_binomial(1, 1, 100, 130)
+summarize_beta_binomial(1, 1, 100, 130)
+
+
+```
+
+
+#### d.
+
+20 of 120
+```{r}
+
+plot_beta_binomial(1, 1, 20, 120)
+summarize_beta_binomial(1, 1, 20, 120)
+
+
+
+```
+
+#### e.
+
+234 of 468
+```{r}
+
+plot_beta_binomial(1, 1, 234, 468)
+summarize_beta_binomial(1, 1, 234, 468)
+
+
+```
+
+
+##### 4.12 (Different data, informative prior)
+
+10 of 13
+```{r}
+
+plot_beta_binomial(10, 2, 10, 13)
+summarize_beta_binomial(10, 2, 10, 13)
+
+
+```
+
+#### b.
+
+0 of 1
+```{r}
+
+plot_beta_binomial(10, 2, 0, 1)
+summarize_beta_binomial(10, 2, 0, 1)
+
+
+```
+
+Interesting representation. Since we had effectively no prior, the posterior and likelihood completely overlap even with almost no data observed.
+
+#### c.
+
+100 of 130
+```{r}
+
+plot_beta_binomial(10, 2, 100, 130)
+summarize_beta_binomial(10, 2, 100, 130)
+
+
+```
+
+
+#### d.
+
+20 of 120
+```{r}
+
+plot_beta_binomial(10, 2, 20, 120)
+summarize_beta_binomial(10, 2, 20, 120)
+
+
+
+```
+
+#### e.
+
+234 of 468
+```{r}
+
+plot_beta_binomial(10, 2, 234, 468)
+summarize_beta_binomial(10, 2, 234, 468)
+
+
+```
+
+
+### 4.9.4 Practice: Sequentiality
+
+
+##### Exercise 4.15 (One at a time)
+
+Prior Beta (2, 3)
+
+
+#### a.
+
+```{r}
+
+summarize_beta_binomial(2, 3, 1, 1)
+
+```
+
+#### b.
+
+```{r}
+
+summarize_beta_binomial(3, 3, 1, 1)
+
+
+```
+
+#### c.
+
+```{r}
+
+summarize_beta_binomial(4, 3, 0, 1)
+
+
+```
+
+#### d.
+
+```{r}
+
+summarize_beta_binomial(4, 4, 1, 1)
+
+
+```
+
+##### Exercise 4.16 (Five at a time)
+
+
+So I realized as I was doing this I was doing it wrong. I didn't notice it in 4.15 because the observations were small, but in this exercise my posterior was growing much faster than made sense. I was including the data from the previous observations, instead of just sequentially updating the Beta (e.g. for part b. I had Beta(5, 5) and data y = 4 n = 10)
+
+#### a.
+
+```{r}
+
+summarize_beta_binomial(2, 3, 3, 5)
+
+
+```
+
+#### b.
+
+```{r}
+
+summarize_beta_binomial(5, 5, 1, 5)
+
+
+```
+
+#### c.
+
+```{r}
+
+summarize_beta_binomial(6, 9, 1, 5)
+
+
+```
+
+#### d.
+
+```{r}
+
+summarize_beta_binomial(7, 13, 2, 5)
+
+
+```
+
+##### Exercise 4.17 (Different data, different posteriors)
+
+
+#### a.
+
+```{r}
+
+plot_beta(4, 3)
+
+
+```
+
+The employees think it is more likely than not that people will click the ad, but they're not very sure at all.They might say between 25% and 80% of people will click the ad.
+
+#### b.
+
+Prior Beta(4, 3)
+
+y = 0, N = 1
+
+```{r}
+
+summarize_beta_binomial(4, 3, 0 , 1)
+
+
+```
+
+Prior Beta(4, 3)
+
+y = 3, N = 10
+
+```{r}
+
+summarize_beta_binomial(4, 3, 3, 10)
+
+
+```
+
+Prior Beta(4, 3)
+
+y = 20, n = 100
+
+```{r}
+
+summarize_beta_binomial(4, 3, 20, 100)
+
+
+```
+
+#### c.
+
+```{r}
+
+plot_beta_binomial(4, 3, 0, 1)
+plot_beta_binomial(4, 3, 3, 10)
+plot_beta_binomial(4, 3, 20, 100)
+
+```
+
+#### d.
+
+I think I already did this in part b... thinking I did something wrong now. Going to check back later
+
+It's honestly still not clear to me what was expected in part b
+
+
+##### Exercise 4.18 (A sequential employee)
+
+
+#### a.
+
+Day one
+
+```{r}
+
+summarize_beta_binomial(4, 3, 0, 1)
+
+
+```
+
+Day two
+
+```{r}
+
+summarize_beta_binomial(4, 4, 3, 10)
+
+
+```
+
+Day three
+
+```{r}
+
+summarize_beta_binomial(7, 11, 20, 100)
+
+
+```
+
+#### b.
+
+```{r}
+
+# initial prior
+plot_beta(4, 3)
+
+# first posterior
+plot_beta(4, 4)
+
+# second posterior
+plot_beta(7, 11)
+
+# third posterior
+plot_beta(27, 91)
+
+
+```
+
+On the first day their understanding didn't change much at all. This makes sense given they didn't have much data at all to compare to the prior.
+
+On the second day they adjusted their understanding a bit. They got a bit more confident in the model, but still left a lot of room for change, basically waiting for a significant sample.
+
+On day three as a result of a large sample the employee really became confident in their estimate.
+
+#### c.
+
+```{r}
+
+summarize_beta_binomial(4, 3, 23, 111)
+
+
+```
+
+As expected, this is the same as when the data is included in the model sequentially. This makes sense!
+
+
+##### Exercise 4.19 (Bechdel test)
+
+
+#### a.
+
+```{r}
+
+b1980 <- filter(bechdel, year == "1980")
+nrow(b1980)
+
+pass1980 <- filter(b1980, binary == "PASS")
+nrow(pass1980)
+
+
+```
+
+```{r}
+
+summarize_beta_binomial(1, 1, 4, 14)
+
+
+```
+
+#### b.
+
+```{r}
+
+b1990 <- filter(bechdel, year == "1990")
+nrow(b1990)
+
+pass1990 <- filter(b1990, binary == "PASS")
+nrow(pass1990)
+
+
+```
+
+```{r}
+
+summarize_beta_binomial(5, 11, 6, 15)
+
+
+```
+
+
+#### c.
+
+```{r}
+
+b2000 <- filter(bechdel, year == "2000")
+nrow(b2000)
+
+pass2000 <- filter(b2000, binary == "PASS")
+nrow(pass2000)
+
+
+```
+
+```{r}
+
+summarize_beta_binomial(11, 20, 29, 63)
+
+
+```
+
+
+#### d.
+
+```{r}
+
+nrow(pass1980) + nrow(pass1990) + nrow(pass2000)
+
+nrow(b1980) + nrow(b1990) + nrow(b2000)
+```
+
+
+```{r}
+
+summarize_beta_binomial(1, 1, 29, 63)
+
+
+```
+
+Okay so this doesn't work but I'm not sure why... trying something different.
+
+
+```{r}
+bfinal <- filter(bechdel, (year == "1980" | year == "1990" | year == "2000"))
+nrow(bfinal)
+
+```
+
+```{r}
+
+bfinalpass <- filter(bfinal, binary == "PASS")
+nrow(bfinalpass)
+
+
+```
+
+```{r}
+
+summarize_beta_binomial(1, 1, 39, 92)
+
+
+```
+
+Cool, so that matches the posterior from part c. Not sure if I had an arithmetic error or what.
+
+Okay I went back through and I just straight up put the wrong numbers in. But I did learn how to filter by multiple variable outcomes using | as a result so that's nice.
+
+##### Exercise 4.20 (Bayesian and frequentist: sequential edition)
+
+This Bayesian approach is different from a frequentest approach because a set of new outcomes is balanced with our prior knowledge and prior outcomes. The Bayesian approach allows us to include not only prior results, but prior intuition about how the world works.
+
+The Bayesian approach is similar to the frequentest approach in that they both benefit from large samples to better quantify our uncertainty.

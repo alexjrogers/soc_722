@@ -1,0 +1,825 @@
+---
+title: "Rogers_HW11"
+author: "Alex Rogers"
+date: "11/2/2021"
+output: html_document
+---
+
+#### Questions for class
+
+These are some questions I had prepared for Thursday. I either asked them or they were answered otherwise.
+
+
+Independence vs dependence is still murky for me. The book calls the bike ridership independent, but words recalled dependent. It states that how many words a person recalls lets us know something about their next attempt, but bike ridership previous day doens't tell us about next day. Is this because what we're actually observing in bike ridership is due to another variable (temperature)? It seems like a prior event would almost always give you some information about a future event.
+
+How is transformation (e.g. log) Not just manipulating data to do what we want. Obviously it is, so maybe my question is why is that okay?
+
+Without using posterior_predict() simulate and plot a posterior predictive model for the rating of this batch.
+I can't wrap my head around the idea of a tomorrow coffee where we know the aroma score but not the actual score.
+
+Exercise 10.17 part b The within_50 value for our cross validation has a mean of .63, and rages from .49 to . 77. So for our observed $Y_{i}$ values, generally over half of them fall with their 50% posterior prediction interval. Is higher better here or do we want this value to be as near 50% as possible?
+Also check part c
+
+From class - map vs real world. How do we choose what to include and exclude?
+
+
+
+## Chapter 10 Exercises
+
+
+```{r, warning=FALSE, message=FALSE}
+
+library(bayesrules)
+library(tidyverse)
+library(bayesplot)
+library(rstanarm)
+library(tidybayes)
+library(broom.mixed)
+set.seed(666420)
+
+
+```
+
+I added set.seed when I was nearly done with the exercises. I think it cause my plots to not have proper limits? Or maybe what's actually wrong is some sort of scale. I've adjusted the limits so we can see the plots more closely.
+
+### Theoretical Exercises
+
+##### Exercise 10.1 (The Big Three)
+
+When evaluating a model, what are the three big questions to ask yourself?
+
+(1) How fair is the model?
+(2) How wrong is the model?
+(3) How accurate are the posterior predictive models?
+
+##### Exercise 10.2 (Model Fairness)
+
+Give an example of a model that will not be fair for each of the reasons below. Your examples don't have to be from real life, but try to keep them in the realm of plausibility.
+
+(a) How the data was collected.
+
+What data researchers choose to collect or not collect could lead to unfairness. For example if a researcher collected data on taxpayers' opinions on a new tax code, but only gathered data from wealthy individuals.
+
+
+(b) The purpose of the data collection.
+
+Say those same researchers were collecting data in effort to inform public policy. While informing public policy might be a good thing for social scientists to do, one would want representative data to inform that policy, not data that further marginalizes poor people.
+
+(c) Impact of analysis on society.
+
+In the previous two examples the results could potentially be continuing or reinforcing class discrepancies.
+
+(d) Bias baked into the analysis.
+
+Representatives of the sample to the population a researcher might want to generalize to is relevant here too. If a researcher wants to generalize to a population, but only gathers data from a non-representative subset of that population, there is like bias baked into the data and the subsequent analysis.
+
+##### Exercise 10.3 (Your perspective)
+
+(a) Identify two aspects of your life experience that inform your standpoint or perspective.
+
+(1) I'm Black
+(2) I'm a graduate student
+
+(b) Identify how those two aspects of your life might limit your evaluation of future analyses.
+
+As a non-white person and a budding race scholar, race is a variable that I often think to include, and have to be mindful of its relevance in analysis.
+
+A similar issue arises as a graduate student. In addition, I don't know what I don't know. I don't have a ton of experience knowing when data analysis is complete or robust.
+
+(c) Identify how those two aspects of your life might benefit your evaluation of future analyses.
+
+Both of the previous examples could also be benefits given the right context. As a person of color I might notice something important regarding racial analysis that a white person might miss. Additionally, perhaps being a reckless graduate student means I might stumble onto something brilliant (probably unlikely).
+
+##### Exercise 10.4 (Neutrality)?
+
+(a) How would you respond if your colleague were to tell you "I'm just a neutral observer, so there's no bias in my data analysis?"
+
+I would tell them to read some Weber and some Du Bois. But seriously, we're human beings with lifetimes of experiences and emotions which absolutely will color how we conduct our research. That can't be avoided, but awareness of that truth allows us to better manage how our experiences effect the research we do.
+
+(b) Your colleague now admits that they are not personally neutral, but they say "my model is neutral". How do you respond now?
+
+If you're not neutral and you built the model, the model isn't neutral. Sorry.
+
+(c) Give an example of when your personal experience or perspective has informed a data analysis.
+
+For my undergraduate capstone I interviewed Black-white multiracial people about their experiences growing up with one white parent. Undoubtedly my experience coming from the population I was studying effected how I analyzed the data, in particular how I coded themes.
+
+##### Exercise 10.5 (That famous quote)
+
+George Box famously said: "All models are wrong, but some are useful". Write an explanation of what this quote means so that one of your non-statistical friends can understand.
+
+Statistical models can give us accurate estimations of what we might observe when looking at one variable's effect on another $X$ on $Y$. But it is important to remember that these are indeed just estimates. The more data we have and the more appropriate our model, the better we can trust our model. It is important (as with most things in life), to remember that nothing is for sure, and to approach statistical analysis with some healthy skepticism.
+
+##### Exercise 10.6 (Assumptions)
+
+Provide 3 assumptions of the Normal Bayesian linear regression model
+
+(1) Conditioned on $X$, the observed data $Y_{i}$ on case $i$ is independent of the observed data on any other case $j$. 
+
+This means we can assume that each "draw" is independent of any other, given consideration of $X$. This means that knowing what one result us doesn't give us info about another (like how a series of coin flips works)
+
+(2) The typical $Y$ outcome can be written as a linear function.
+
+This means that we expect a consistent relationship between $X$ and $Y$. (e.g. when temp increases by 1 ridership increases by 150)
+
+(3) At any $X$ value, Y varies normally around $\mu$ with a consistent variability $\sigma$.
+
+This means means we have an expectation that the value of $Y$ will generally fall within a range of values $\mu$, but where exactly it falls also has variability $\sigma$
+
+##### Exercise 10.7 (Mini posterior predictive check)
+
+Suppose we have a small dataset where predictor $X$ has values $\overrightarrow{x} = (12, 10, 4, 8 ,6)$, and response variable $Y$ has values $\overrightarrow{y} = (20, 17, 4, 11, 9)$. Based on this data, we built a Bayesian linear regression model of $Y$ vs $X$.
+
+(a) In our first simulated parameter set$(\beta^1_{0}, \beta^1_{1}, \sigma^1) = (-1.8, 2.1, .8)$. Explain how you would use these values, combined with the data, to generate a prediction for $Y_{1}$
+
+We can plug the values given by the simulation into the linear regression equation which will give us a simulated $Y$ value.
+
+(b) Using the first parameter set, generate predictions for $(Y_{1}, Y_{2}, ..., Y_{5})$. Comment on the difference between the predictions and the observed values $\overrightarrow{y}$.
+
+```{r}
+
+beta_0 <- -1.8
+beta_1 <- 2.1
+sigma <- .8
+x <- c(12, 10, 4, 8, 6)
+y <- c(20, 17, 4, 11, 9)
+small_data <- data.frame(x, y)
+
+small_sim <- small_data |> 
+  mutate(mu = beta_0 +beta_1 * x,
+         y_new = rnorm(5, mean = mu, sd = sigma)) |> 
+  select(x, y, y_new)
+
+
+```
+
+```{r}
+
+head(small_sim, 5)
+
+
+```
+
+Our simulated values are decently close given our extremely small sample size.
+
+
+##### Exercise 10.8 (Explain to a friend: posterior predictive check)
+
+Explain the following in plain language:
+
+(a) The goal of a posterior predictive check.
+
+Our posterior predictive check just want to see how close our model approximates the actual data.
+
+(b) How to interpret the posterior predictive check results.
+
+The closer our simulated $Y$ values are (numerically and in spread) to what we see in the actual data, the more predictive power our model has.
+
+##### Exercise 10.9 (Explain to a friend: posterior predictive summary)
+
+Explain the following in plain language:
+
+(a) What the median absolute error tells us about our model.
+
+The MAE measures how far a typical distance between an observed value $Y_{i}$ and a their posterior predictive means $Y'_{i}$. Essentially telling us how closely we are predicting $Y'_{i}$
+
+(b) What the scaled media absolute error is, and why it might be an improvement over median absolute error.
+
+The scaled MAE measures the typical number of standard deviations that the observed $Y_{i}$ fall from their posterior predictive means $Y'_{i}$. This could be more helpful than MAE because framing distance in terms of standard deviation allows us to understand if our data follow what we typically see in the observed data.
+
+
+(c) What the within-50 statistic tells us about our model.
+
+Within-50 lets us know how many of our observed values $Y_{i}$ fall within their 50% posterior predictive intervals. We would hope for this to be about 50%, or 95% for the within-95 statistic.
+
+##### Exercise 10.10 (Posterior predictive checks)
+ 
+(a) In pp_check() plots, what does the darker density represent? What does a single light-colored density represent?
+
+One simulated model for a $Y_{i}$ given $X$
+
+(b) If our model fits well, describe how its pp_check() will appear. Explain why a good fitting model will produce a plot like this.
+
+If our model fits well, the simulated $Y_{i}$ values will be visually congruent with the plotted $Y$ data. That is they will follow the general shape and behavior of the plotted $Y$.
+
+(c) If our model fits poorly, describe how its pp_check() might appear.
+
+If our model fits poorly, the simulated $Y_{i}$ values will not be visually congruent with the plotted $Y$ data. That is they won't follow the general shape and behavior of the plotted $Y$.
+
+##### Exercise 10.11 (Cross-validation and tacos)
+
+Recall this example from the chapter: Suppose you want to open a new taco stand. You build all of your recipes around Reem, your friend who prefers that anchovies be a part of every meal. You test your latest “anchov-ladas” dish on her and it’s a hit.
+
+(a) What is the "data" in this analogy?
+
+$X$ would be if Reem likes the food
+$Y_{i}$ is if the general public likes the food.
+
+(b) What is the "model" in this analogy?
+
+The model is basically using if Reem like the food $X$ to make predictions about if the general public will like the food $Y$
+
+(c) How could you use cross-validation to evaluate a new taco recipe?
+
+I don't think we could use cross-valdiation with this model? We only have Reem to work with, so there is no way to split the values. If we had more friends we could feed them the food to get an idea if Reem's taste maps to a greater population.
+
+(d) Why would cross-validation help you develop a successful recipe?
+
+This would be helpful because while it's nice that Reem likes our food, their opinion is probably over-inflating our sense of how good our food is.
+
+##### Exercise 10.12 (Cross-validation)
+
+(a) What are the four steps for the k-fold cross-validation algorithm?
+
+(1) Create the folds
+(2) Train and test the model
+(3) Repeat step 2 $k - 1$ more times, each time leaving out a different fold for testing.
+(4) Calculate cross-validation estimates.
+
+(b) What problems can occur when you use the exact same data to train and test a model?
+
+If you use the same data to train and test a model, you can potentially validate an improper model. The model needs some space to be wrong.
+
+(c) What questions do you have about k-fold cross-validation?
+
+What is the purpose of the leave-one-out strategy?
+
+### Applied Exercises
+
+```{r}
+# Setting up for applied exercises
+
+data("coffee_ratings")
+coffee_ratings <- coffee_ratings |> 
+  select(farm_name, total_cup_points, aroma, aftertaste)
+
+
+```
+
+
+##### Exercise 10.13 (Getting started with coffee ratings)
+
+(a) The coffee_ratings data includes ratings and features of 1339 different batches of beans grown on 571 different farms. Explain why using this data to model ratings (total_cup_points) by aroma or aftertaste likely violates the independence assumption of the Bayesian linear regression model. NOTE: Check out the head() of the dataset.
+
+```{r}
+
+coffee_ratings |> 
+  head()
+
+
+```
+
+There are 571 different farms and the top two coffees come from the same farm. So what farm a coffee comes from probably effects its rating, causing samples to be dependent.
+
+(b) Use this new_coffee data for the remaining exercises.
+
+```{r}
+
+new_coffee <- coffee_ratings |> 
+  rename(total = total_cup_points) |> 
+  group_by(farm_name) |> 
+  sample_n(1) |>
+  ungroup()
+dim(new_coffee)
+
+# This combined rows by the variable farm_name, so we can analyze data by farm as opposed to by batch of coffee. This removes the dependency problem.
+
+# I also renamed the total_cup_points variable to total, as the prior was annoying to type out and I expect I'll be doing so a lot.
+
+```
+
+##### Exercise 10.14 (Coffee ratings: model it)
+
+Build a Bayesian Normal regression model of a coffee bean's rating $Y$ by its aroma grade $X$.
+
+Assume that our prior understanding is that the average cup of coffee has a 75-point rating, though this might be anywhere between 55 and 95.
+
+Beyond that, utilize weakly informative priors.
+
+(a) Plot and discuss the relationship between a coffee's rating (total) and its (aroma) grade (higher is better).
+
+```{r}
+
+ggplot(new_coffee, aes(x = aroma, y = total))+
+  geom_point(size = .5)+
+  geom_smooth(method = "lm", se = FALSE)+
+  xlim(6.4, 9)+
+  ylim(60, 90)
+
+
+```
+
+The relationship between total point and aroma seems to be decently linear. There are some values below 7 which follow significantly below the line, maybe aroma has a stronger negative effect below 7. 
+
+(b) Use stan_glm() to simulate the Normal regression posterior model.
+
+```{r, results='hide'}
+
+#trying out results='hide' to prevent the text dump that usually comes with MCMC models
+
+coffee_model <- stan_glm(total ~ aroma, data = new_coffee,
+                         family = gaussian,
+                         prior_intercept = normal(75, 10),
+                         chains = 4, iter = 5000*2)
+
+
+```
+
+(c) Provide the visual and numerical posterior summaries for the aroma coefficient $\beta_{1}$
+
+```{r}
+
+# Visual posterior summary
+
+new_coffee |> 
+  add_fitted_draws(coffee_model, n = 100) |> 
+  ggplot(aes(x = aroma, y = total))+
+  geom_line(aes(y = .value, group = .draw),
+            alpha = .15)+
+  geom_point(data = new_coffee, size = .05)+
+   xlim(6, 9)+
+  ylim(50, 100)
+  
+
+
+```
+
+```{r}
+
+# Numerical posterior summary
+
+tidy(coffee_model, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = .9)
+
+
+```
+
+What's up with my intercept? Is this the true intercept instead of the $\beta_{0c}$ (whos name I can't remember presently).
+
+(d) Interpret the posterior median of $\beta_{1}$
+
+For every one point increase in aroma, we expect about a 6 point increase in total points. (This follows from the plot of the posterior as well)
+
+(e) Do you have significant posterior evidence that, the better a coffee bean's aroma, the higher its rating tends to be? Explain.
+
+The model visualizes linearly very nicely. There is very little deviation around the means of both the effect of aroma, as well as sigma. Also it follows what I would have guessed based on my knowledge of coffee (small). It looks good to me! I say yes.
+
+##### Exercise 10.15 (Coffee ratings: Is it wrong?)
+
+(a) Your posterior simulation contains multiple sets of plausible parameter sets, $(\beta_{0}, \beta_{1}, \sigma)$. Use the first of these to simulate a sample of 572 new coffee ratings from the observed aroma grades.
+
+```{r}
+
+# making the model into a data frame
+
+coffee_model_df <- as.data.frame(coffee_model)
+
+
+```
+
+```{r}
+
+# Isolating the first set of parameters
+
+first_set <- head(coffee_model_df, 1)
+
+```
+
+```{r}
+
+# building parameter set based on first observation
+
+beta_0 <- first_set$`(Intercept)`
+beta_1 <- first_set$aroma
+sigma  <- first_set$sigma
+
+one_simulation <- new_coffee |> 
+  mutate(mu = beta_0 + beta_1 * aroma,
+         simulated_total = rnorm(572, mean = mu, sd = sigma)) |> 
+  select(aroma, total, simulated_total)
+
+
+```
+
+(b) Construct a density plot of your simulated sample and superimpose this with a density plot of the actual observed (total) data. Discuss.
+
+```{r}
+
+ggplot(one_simulation, aes(x = simulated_total))+
+  geom_density(color = "orchid")+
+  geom_density(aes(x = total), color = "dark orchid")
+
+
+
+```
+
+The simulated data captures the spirit of the original totals with a similar center and distribution.
+
+(c) Think bigger. Use pp_check() to implement a more complete posterior predictive check.
+
+```{r}
+
+pp_check(coffee_model, nreps = 100)+
+  xlab("Total Points")
+
+
+```
+
+(d) Putting this together, do you think that assumptions 2 and 3 of the Normal regression model are reasonable? Explain.
+Assumptions: 
+The typical $Y$ outcome can be written as a linear function.
+At any $X$ value, $y$ varies normally around $\mu$ with a consistent variability $\sigma$
+
+Second assumption: Yes, we have seen that as $X$ increases so does $Y$
+
+Third assumption: Yes. The values of $Y_{rep}$ vary normally around the $\sigma$. We can see this in the visualization of the 100 samples from pp_check()
+
+##### Exercise 10.16 (Coffee ratings: Art the posterior models accurate? (Part 1))
+
+Let's explore how well our posterior model predicts coffee bean ratings.
+
+(a) The first batch of coffee beans in new_coffee has an aroma grade of 7.67. Without using posterior_predict(), simulate and plot a posterior predictive model for the rating of this batch.
+
+```{r}
+
+# Creating variables for a typical total score for coffee with 7.67 aroma score, and typical score for a specific coffee with 7.67 aroma score.
+
+predict_specific <- coffee_model_df |> 
+  mutate(mu = `(Intercept)` +aroma*7.67,
+         y_new = rnorm(20000, mean = mu, sd = sigma))
+
+
+
+```
+
+```{r}
+
+# checking it out
+
+ggplot(predict_specific, aes(x = y_new)) +
+  geom_density()+
+  xlab("Total Points")
+
+
+```
+
+So this specific coffee with the aroma score of 7.67 is likely to have a score somewhere between 77 and 87. 
+
+(b) In reality, this batch of beans had a rating of 84. Without using prediction_summary(), calculate and interpret two measures of the posterior predictive error for this batch: both the raw and standardized error.
+
+
+
+
+```{r}
+
+# two types of error
+
+predict_specific |> 
+  summarise(mean = mean(y_new), error = 84 - mean(y_new), error_scaled = error / sd(y_new))
+
+
+```
+
+
+
+So this coffee with an aroma score of 7.67 and a total score of 84 is within one standard deviation of its posterior mean prediction.
+
+(c) To get a sense of the posterior predictive accuracy for all batches in new_coffee, construct and discuss a ppc_intervals() plot.
+
+```{r}
+
+predictions <- posterior_predict(coffee_model, newdata = new_coffee)
+
+ppc_intervals(new_coffee$total, yrep = predictions, x = new_coffee$aroma,
+              prob = .5, prob_outer = .95)+
+  xlab("Aroma Score") +
+  ylab("Total Score")
+
+
+```
+
+The visualization shows a few things, that most of the values of Y (total score) fall within two standard deviations of the expected values for the given X. Also total scores look to be most concentrated where we would expect for value 7.67, around 82. We can also visualize that the actual score of 84 was very unexpected, which makes sense given the small error values we assessed earlier.
+
+(d) How many batches have ratings that are within their 50% posterior prediction interval? (Answer this using R code, don't try to visually count it up!)
+
+```{r}
+
+prediction_summary(coffee_model, data = new_coffee)
+
+
+```
+
+So about .63 of the batches have ratings within their .5 PPI
+
+##### Exercise 10.17 (Coffee ratings: Are the posterior predictions accurate? (Part 2))
+
+(a) Use prediction_summary_cv() to obtain 10-fold cross-validated measurements of our model's posterior predictive quality.
+
+```{r}
+
+# Creating a 10-fold cross-validation model
+
+coffee_cv <- prediction_summary_cv(model = coffee_model, data = new_coffee, k = 10)
+
+
+```
+
+
+(b) Interpret each of the four cross-validated metrics reported in part a.
+
+```{r}
+
+# making a df from the CV sim so I can wrangle more easily
+
+coffee_cv_df <- as.data.frame(coffee_cv)
+
+
+```
+
+MAE : 
+
+```{r}
+
+# taking a look
+
+coffee_cv$folds
+coffee_cv_df$folds.mae |> 
+  mean()
+
+
+```
+
+The average MAE value for the cross-validated simulation is 1.1, and ranges from .8 to 1.5. This represents how far the training values are from the testing values. This is variation of typically just over a point on a 100 point scale. Seems pretty good to me!
+
+Scaled MAE : 
+
+```{r}
+
+coffee_cv_df$folds.mae_scaled |> 
+  mean()
+
+
+```
+
+A value of .53 for the scaled MAE tells us that a typical observed $Y$ value in the cross validation falls about .53 standard deviations away from the posterior predictive mean $Y^`_{i}$. This indicates that our training values approximate the test values pretty well.
+
+within_50 : 
+
+```{r}
+
+coffee_cv_df$folds.within_50 |> 
+  mean()
+
+
+```
+
+
+The within_50 value for our cross validation has a mean of .63, and rages from .49 to . 77. So for our simulated $Y$ values, generally over half of them fall with their 50% posterior prediction interval. Is higher better here or do we want this value to be as near 50% as possible?
+
+Within_95 : 
+
+```{r}
+
+coffee_cv_df$folds.within_95 |> 
+mean()
+
+
+```
+
+94% of our simulated $Y$ values fall within their 95% posterior prediction interval. This seems good!
+
+(c) Verify the reported cross-validated MAE using information from the 10 folds.
+
+I did this in part b, not knowing this question was coming
+
+
+
+##### Exercise 10.18 (Coffee ratings: Is it fair?)
+
+Is our coffee bean analysis fair?
+
+Is this a trick question? Does any of the work I've done signal an answer? I thought fairness had to do with how data was collected, why and by who it was collected, and biases. Can I know this?
+
+I do know that coffee is a precarious industry with troubling workers rights and international economic implications. If I had to guess I'd say our coffee bean analysis is almost inevitably problematic.
+
+##### Exercise 10.19 (Coffee ratings now with aftertaste)
+
+Aroma isn't the only possible predictor of a coffee bean's rating. What if, instead, we were to predict rating by a bean's aftertaste? In exploring this relationship, continue to utilize the same prior models.
+
+(a) Use stan_glm() to simulate the Normal regression posterior model of total_cup_points (total) by aftertaste.
+
+```{r, results='hide'}
+
+at_model <- stan_glm(total ~ aftertaste, data = new_coffee,
+                     family = gaussian,
+                     prior_intercept = normal(75, 10),
+                     chains = 4, iter = 5000*2)
+
+
+```
+
+(b) Produce a quick plot to determine whether this model is wrong.
+
+```{r}
+
+new_coffee |> 
+  add_fitted_draws(at_model, n = 100) |> 
+  ggplot(aes(x = aftertaste, y = total))+
+  geom_line(aes(y = .value, group = .draw),
+            alpha = .15)+
+  geom_point(data = new_coffee, size = .05)+
+  xlim(6, 9)+
+  ylim(60,95)
+
+
+```
+
+Visually the model doesn't look wrong to me.
+
+(c) Obtain 10-fold cross-validated measurements of this model's posterior predictive quality.
+
+```{r}
+
+at_cv <- prediction_summary_cv(model = at_model, data = new_coffee, k = 10)
+
+
+```
+
+```{r}
+
+at_cv$folds
+
+
+```
+
+(d) Putting it all together, if you could pick only one predictor of coffee bean ratings, would it be aroma or aftertaste? Why?
+
+```{r}
+
+
+at_cv_df <- as.data.frame(at_cv)
+
+
+at_cv_df$folds.mae |> 
+  mean()
+
+at_cv_df$folds.mae_scaled |> 
+  mean()
+
+at_cv_df$folds.within_50 |> 
+  mean()
+
+at_cv_df$folds.within_95 |> 
+  mean()
+
+
+```
+
+These values are extremely similar to the values we got when using the aroma metric. The only real difference is in the MAE, .88 for aftertaste and 1.1 for aroma. But then the scaled MAE values are very similar. I honestly think either of these are a fine value $X$ to predict $Y$
+
+### Open-ended exercises
+
+##### Exercise 10.20 (Open-ended: more weather)
+
+In this exercise you will use the weather_perth data in the bayesrules package to explore the Normal regression model of the maximum daily temperature (maxtemp) by the minimum daily temperature (mintemp) in Perth, Australia. You can either tune or utilize weakly informative priors.
+
+(a) Fit the model using stan_glm()
+
+```{r}
+
+data("weather_perth")
+
+
+```
+
+
+
+```{r}
+
+ggplot(weather_perth, aes(x = mintemp, y = maxtemp))+
+  geom_point(size = .5)+
+  geom_smooth(method = "lm", se = FALSE)
+
+
+```
+
+
+So based on this plot I don't expect a strong relationship between min temperature and max temperature, so I'm going to use weakly informative priors. The relationship seems to be linear but has massive variation.
+
+```{r, results='hide'}
+
+perth_model <- stan_glm(maxtemp ~ mintemp, data = weather_perth,
+                        family = gaussian,
+                        chains = 4, iter = 5000*2)
+
+
+```
+
+
+(b) Summarize your posterior understanding of the relationship between maxtemp and mintemp.
+
+We can start by checking it out visually.
+
+```{r}
+
+weather_perth |> 
+  add_fitted_draws(perth_model, n = 100) |> 
+  ggplot(aes(x = mintemp, y = maxtemp))+
+  geom_line(aes(y = .value, group = .draw),
+            alpha = .15)+
+  geom_point(data = weather_perth, size = .5)
+
+
+```
+
+just like with the prior, we do see a linear relationship but we also see wide variability.
+
+```{r}
+
+tidy(perth_model, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = .9)
+
+
+```
+
+
+The data shows something I didn't expect. Perhaps I overestimated variability visually. The $\beta_{1}$ values and $\sigma$ values vary much less than I expected. I guess it's always good to supplement visual analysis with data.
+
+
+(c) Evaluate your model and summarize your findings.
+
+```{r}
+
+# (probably should have done this earlier)
+
+mcmc_trace(perth_model)
+mcmc_dens_overlay(perth_model)
+
+```
+
+
+so our model is healthy. I think a Normal linear regression model is a good way to model this data, there does seem to be a relationship between $X$ min temp and $Y$ max temperature.
+
+##### Exercise 10.21 (Open-ended: more bikes)
+
+In this exercise you will use the bikes data in the bayesrules package to explore the Normal regression model of rides by humidity. You can either tune or utilize weakly informative priors.
+
+(a) Fit the model using stan_glm()
+
+I am going to use weakly informative priors here as well. Mostly because I think that humidity is correlated with temp_feel, and that temp_feel is what effects ridership, not humidity, and I don't know how to work with multiple $X$ variables yet :( 
+
+```{r}
+
+data(bikes)
+
+
+```
+
+```{r, results='hide'}
+
+bikes_model <- stan_glm(rides ~ humidity, data = bikes,
+                        family = gaussian,
+                        chains = 4,
+                        iter = 5000*2)
+
+
+```
+
+(b) Summarize your posterior understanding of the relationship between rides and humidity.
+
+Starting visually:
+
+```{r}
+
+bikes |> 
+  add_fitted_draws(bikes_model, n = 100) |> 
+  ggplot(aes(x = humidity, y = rides))+
+  geom_line(aes(y = .value, group = .draw),
+            alpha = .15)+
+  geom_point(data = bikes, size = .05)
+
+
+```
+```{r}
+
+
+tidy(bikes_model, effect = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = .9)
+
+
+```
+
+
+(c) Evaluate your model and summarize your findings.
+
+```{r}
+
+# just to be sure...
+
+mcmc_trace(bikes_model)
+mcmc_dens_overlay(bikes_model)
+
+
+```
+
+Okay. So our MCMC simulation is healthy. Howerver, I think I can confidently say this is not a strong linear relationship. For one, sometimes humidity can increase ridership and sometimes it can decrease it $X$ can  take values above or below 0 on .9 CI. Visually, this also just doesn't seem to be a strong linear relationship at all, the line has an almost zero slope.

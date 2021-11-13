@@ -1,0 +1,859 @@
+---
+title: "Rogers_HW12"
+author: "Alex Rogers"
+date: "11/8/2021"
+output: html_document
+---
+
+#### Questions for class
+
+I expected to have to change some argument in the stan_glm() syntax when switching from a quantitative variable to a categorical one. Can we talk about this?
+
+
+```{r, warning=FALSE, message=FALSE}
+
+# loading packages and setting seed
+
+set.seed(666420)
+library(bayesrules)
+library(rstanarm)
+library(bayesplot)
+library(tidyverse)
+library(broom.mixed)
+library(tidybayes)
+
+
+```
+
+## Chapter workthrough
+
+```{r}
+
+# loading and wrangling data
+
+data(weather_WU)
+weather_WU |> 
+  group_by(location) |> 
+  tally()
+
+
+```
+
+
+```{r}
+
+# filtering by afternoon temperature and potential x value variables
+
+weather_WU <- weather_WU |> 
+  select(location, windspeed9am, humidity9am, pressure9am, temp9am, temp3pm)
+
+
+```
+
+
+```{r}
+
+# checking out a simple Normal regression of 3pm temp by 9am temp
+
+ggplot(weather_WU, aes(x = temp9am, y = temp3pm))+
+  geom_point(size = .2)
+
+
+```
+```{r, results='hide'}
+
+# simulating posterior model of afternoon temp by morning temp
+
+weather_model_1 <- stan_glm(temp3pm ~ temp9am,
+                   data = weather_WU,
+                   family = gaussian,
+                   prior_intercept = normal(25,5),
+                   prior = normal(0, 2.5),
+                   prior_aux = exponential(1, autoscale = TRUE),
+                   chains = 4, iter = 5000*2)
+
+
+```
+
+```{r}
+
+# checking out prior summary
+
+prior_summary(weather_model_1)
+
+
+```
+
+```{r}
+
+pp_check(weather_model_1)
+
+
+```
+
+```{r}
+
+# checking out density plots separated by city
+
+ggplot(weather_WU,aes(x = temp3pm, fill = location))+
+  geom_density(alpha = .5)
+
+
+```
+
+```{r, results='hide'}
+
+weather_model_2 <- stan_glm(
+  temp3pm ~ location,
+  data = weather_WU, family = gaussian,
+  prior_intercept = normal(25, 5),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains = 4, iter = 5000*2
+)
+
+
+```
+
+```{r}
+
+# checking out posterior summary statistics
+
+tidy(weather_model_2, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = .8)
+
+
+
+```
+
+```{r}
+
+# Checking out the Wollongong posterior compared to Uluru
+
+as.data.frame(weather_model_2) |> 
+  mutate(uluru = `(Intercept)`,
+         wollongong = `(Intercept)` + locationWollongong) |> 
+  mcmc_areas(pars = c("uluru"), "wollongong")
+
+
+
+```
+
+
+```{r}
+
+# checking out the plot of afternoon temp in both cities by morning temp. 
+
+ggplot(weather_WU, aes(y = temp3pm, x = temp9am, color = location))+
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+
+
+```
+
+
+```{r, results='hide'}
+
+# simulating the prior for the multivariate weather model
+
+weather_model_3_prior <- stan_glm(temp3pm ~ temp9am + location,
+                  data = weather_WU, family = gaussian,
+                  prior_intercept = normal(25, 5),
+                  prior = normal(0, 2.5, autoscale = TRUE),
+                  prior_aux = exponential(1, autoscale = TRUE),
+                  chains = 4, iter = 5000*2, prior_PD = TRUE)
+
+
+```
+
+```{r}
+
+# simulating and plotting priors
+
+weather_WU |> 
+  add_predicted_draws(weather_model_3_prior, n = 100) |> 
+  ggplot(aes(x = .prediction, group = .draw))+
+  geom_density()+
+  xlab("3PM Temperature")
+
+weather_WU |> 
+  add_fitted_draws(weather_model_3_prior, n = 100) |> 
+  ggplot(aes(x = temp9am, y = temp3pm, color = location))+
+  geom_line(aes(y = .value, group = paste(location, .draw)))
+
+
+```
+
+```{r, results='hide'}
+
+# updating the prior model to be posterior
+
+weather_model_3 <- update(weather_model_3_prior, prior_PD = FALSE)
+
+
+```
+
+```{r}
+
+# checking out posterior model
+
+weather_WU |> 
+  add_fitted_draws(weather_model_3, n = 100) |> 
+  ggplot(aes(x = temp9am, y = temp3pm, color = location))+
+  geom_line(aes(y = .value, group = paste(location, .draw)),
+            alpha = .1)+
+  geom_point(data = weather_WU, size = .1)
+
+
+```
+
+
+```{r}
+
+# simulating a set of predictions
+
+temp3pm_prediction <- posterior_predict(
+  weather_model_3,
+  newdata = data.frame(temp9am = c(10, 10),
+                       location = c("Uluru", "Wollongong"))
+)
+
+
+# plotting posterior predictive models
+
+mcmc_areas(temp3pm_prediction)+
+  scale_y_discrete(labels = c("Uluru", "Wollongong"))+
+  xlab("3PM Temperature")
+
+```
+
+
+```{r}
+
+# checking out 3pm temp in each city by humidity
+
+ggplot(weather_WU, aes(y = temp3pm, x = humidity9am, color = location))+
+  geom_point(size = .5)+
+  geom_smooth(method = "lm", se = FALSE)
+
+
+```
+
+```{r, results='hide'}
+
+# simulating weather with humidity * city interaction
+
+interaction_model <- stan_glm(
+     temp3pm ~ location + humidity9am + location:humidity9am,
+     data = weather_WU, family = gaussian,
+     prior_intercept = normal(25, 5),
+     prior = normal(0, 2.5, autoscale = TRUE),
+     prior_aux = exponential(1, autoscale = TRUE),
+     chains = 4, iter = 5000*2)
+
+
+```
+
+```{r}
+
+# checking out posterior summary statistics for model with interaction term
+
+tidy(interaction_model, effects = c("fixed", "aux"))
+
+posterior_interval(interaction_model, prob = .8,
+                   pars = "locationWollongong:humidity9am")
+```
+
+
+```{r}
+
+# checking out the strength of the interaction visually
+
+weather_WU |> 
+  add_fitted_draws(interaction_model, n = 200) |> 
+  ggplot(aes(x = humidity9am, y = temp3pm, color = location))+
+  geom_line(aes(y = .value, group = paste(location, .draw)),
+            alpha = .1)
+
+```
+
+```{r, results='hide'}
+
+# building a likely overly-complex model with all predictors
+
+weather_model_4 <- stan_glm(
+  temp3pm ~ ., # shortcut to use all predictors
+  data = weather_WU, family = gaussian,
+  prior_intercept = normal(25, 5),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains = 4, iter = 5000*2)
+
+
+
+```
+
+
+```{r}
+
+#checking out prior specifications
+
+prior_summary(weather_model_4)
+
+
+```
+
+
+```{r}
+
+# checking out model 4 posterior summaries 
+
+posterior_interval(weather_model_4, prob = .95)
+
+```
+
+
+```{r}
+
+# visually assessing our practice models
+
+pp_check(weather_model_1)
+pp_check(weather_model_2)
+pp_check(weather_model_3)
+pp_check(weather_model_4)
+pp_check(interaction_model)
+
+
+```
+
+
+```{r}
+
+# taking 2 separate 40 day samples of Wollongong
+# for some reason this code only works if I copy and paste it. something with the period. I tried typing it out twice.
+
+weather_shuffle <- weather_australia %>% 
+  filter(temp3pm < 30, location == "Wollongong") %>% 
+  sample_n(nrow(.))
+sample_1 <- weather_shuffle %>% head(40)
+sample_2 <- weather_shuffle %>% tail(40)
+
+```
+
+
+```{r}
+
+# saving plot for later
+
+g <- ggplot(sample_1, aes(y = temp3pm, x = day_of_year))+
+  geom_point()
+
+g
+
+```
+
+
+```{r}
+
+# plotting the three theoretical models
+
+g + geom_smooth(method = "lm", se = FALSE)
+g + stat_smooth(method = "lm", se = FALSE, formula = y ~ poly(x, 2))
+g + stat_smooth(method = "lm", se = FALSE, formula = y ~ poly(x, 12))
+
+
+```
+
+
+## Conceptual exercises
+
+
+##### Exercise 11.1 (Why multiple predictors?)
+
+Briefly explain why we might want to build a regression model with more than one predictor.
+
+A single predictor might give us some information about an expectation for a $Y$ value, but it often happens that there is more to the story (as is the case with $X$ as 9am temp in the chapter, it doesn't capture the bimodality in the data, so there is more to the story and another predictor is helpful)
+
+##### Exercise 11.2 (Categorical predictors: cars)
+
+Let's say that you want to model a car's miles per gallon in a city $(Y)$ by the make of the car: Ford, Kia, Subaru, or Toyota. This relationship can be written as $\mu = \beta_{0} + \beta_{1} X_{1} + \beta_{2} X_{2} +\beta_{3} X_{3}$, where
+$X_{1}, X_{2}, X_{3}$ are indicators for whether or not the cars are Kias, Subarus, or Toyotas, respectively:
+
+a. Explain why there is no indicator term for the Ford category. 
+
+There is no indicator term for the Ford category because it is the referent category. It is the first variable alphabetically so it is defaulted as the referent
+
+b. Interpret the regression coefficient $\beta_{2}$
+
+$\beta_{2}$ is the typical difference of miles per gallon between Ford cars and a given other make of car.
+
+c. Interpret the regression coefficient $\beta_{0}$
+
+The $\beta_{0}$ coefficient is the typical miles per gallon rating of a ford car.
+
+##### Exercise 11.3 (Categorical and quantitative predictors: tomatoes)
+
+You have recently taken up the hobby of growing tomatoes and hope to learn more about the factors associated with bigger tomatoes. As such, you plan to model a tomato’s weight in grams $(Y)$ by the number of days it has been growing $(X_{1})$ and its type, Mr. Stripey or Roma. Suppose the expected weight of a tomato is a linear function of its age and type, $\mu = \beta_{0} + \beta_{1} X_{1} + \beta_{2} X_{2}$ where $X_{2}$ is an indicator for Roma tomatoes.
+
+a. Interpret each regression coefficient, $\beta_{0}$, $\beta_{1}$, and $\beta_{2}$
+
+$\beta_{0}$ : The typical weight of a Roma tomato at a theoretical 0 grow time.
+
+$\beta_{1}$ : The typical change in weight of a tomato for every increase in grow time
+
+$\beta_{2}$ : The typical difference between a Roma and a Mr. Stripey when they have the same grow time.
+
+b. What would it mean if $\beta_{2}$ were equal to zero?
+
+If $\beta_{2}$ were zero, then there would be no difference in weights of Romas and Mr. Stripeys when they have the same grow time.
+
+Exercise 11.4 (Interactions: tomatoes)
+
+Continuing your quest to understand tomato size, you incorporate an interaction term between the tomato grow time $(X_{1})$ and type $(X_{2})$ into your model: $\mu = \beta_{0} + \beta_{1} X_{1} + \beta_{2} X_{2} + \beta_{3} X_{1} X_{2}$.
+
+a. Explain, in context, what it means for $X_{1}$ and $X_{2}$ to interact.
+
+For these two coefficients to interact would mean that the association between grow time weight varies depending on the type of tomato.
+
+b. Interpret $\beta_{3}$
+
+$\beta_{3}$ assesses the difference in mass between mr smiley and roma based on their grow times.
+
+##### Exercise 11.5 (Interaction terms)
+
+a. Sketch a model that would benefit from including an interaction term between a categorical and quantitative predictor.
+
+I'm sorry I can't get these to roate properly. Something happens when they get pulled into R
+
+![](/Users/alexr/Desktop/IMG_1361.jpg)
+
+
+b. Sketch a model that would not benefit from including an interaction term between a categorical and quantitative predictor.
+
+![](/Users/alexr/Desktop/IMG_1362.jpg)
+
+c. Besides visualization, what are two other ways to determine if you should include interaction terms in your model?
+
+I think logic can be really helpful here. Does it make sense that a certain variable would have an effect on the magnitude of impact of another? Intuition can go a long way here.
+
+##### Exercise 11.6 (Improving your model: shoe size)
+
+Let's say you model a child's shoe size $(Y)$ by two predictors: the child's age in years $(X_{1})$ and an indicator of whether the child knows how to swim $(X_{2})$.
+
+a. Generally speaking, why can it be beneficial to add predictors to models?
+
+It can be beneficial to add predictors to models because a single predictor may not capture a comprehensive enough picture of why a given $Y$ outcome occurs (like we saw with the 9am predictor in the practice, it didn't account for the bimodality of the model).
+
+b. Generally speaking, why can it be beneficial to remove predictors from models?
+
+It can be beneficial to remove predictors from the model to prevent overfitting, that is, making predictors on outliers that aren't likely to make accurate predictions.
+
+c. What might you add to this model to improve your predictions of shoe size? Why?
+
+Length of foot in centimeters would likely be an extremely accurate predictor of shoe size.
+
+d. What might you remove from this model to improve it? Why?
+
+I think we could safely remove the does child know how to swim predictor. I can't see this being associated with shoe size at all. If one was really interested in including a swim-related predictor, perhaps swim speed would be a slightly better predictor (bigger feet = faster swim speed = bigger shoe size??). Probably not recommended though.
+
+##### Exercise 11.7 (What makes a good model?)
+
+We don't expect our regression models to be perfect, but we want to do our best. It can be helpful to think about what we want and expect from our models.
+
+a. What are qualities of a good model?
+
+A good model can make predictions that follow trends in the data, without being too strictly beholden to the data. It allows room for extremities which don't too strongly influence the predictions
+
+b. What are qualities of a bad model?
+
+A bad model might be too rigid, assuming for example a linear relationship between variables when something more complex is happening. A model might also be overtuned, causing it to adhere too strictly to the data, overestimating the importance of outliers, leading to bad predictions.
+
+##### Exercise 11.8 (Is our model good / better?)
+
+What techniques have you learned in this chapter to assess and compare your models? Give a brief explanation for each technique.
+
+We have all sorts of visual techniques like pp_check and pp_intervals. We also have statistical evaluations like the k-fold validation, which trains and tests given subsets of the data and the LOO statistic, which attempts to see how well a model can make a prediction excluded from the test.
+
+##### Exercise 11.9 (Bias-variance trade-off) In your own words, briefly explain what the bias-variance tradeoff is and why it is important.
+
+I touched on this a bit above, but basically you want a model which is flexible enough to make predictions off of trends, but not so beholden to the data that it is unable to make predictions because it is not flexible.
+
+## Applied exercises
+
+In the next exercises you will use the penguins_bayes data in the bayesrules package to build various models of penguin body_mass_g. Throughout, we’ll utilize weakly informative priors and a basic understanding that the average penguin weighs somewhere between 3,500 and 4,500 grams. Further, one predictor of interest is penguin species: Adelie, Chinstrap, or Gentoo. We’ll get our first experience with a 3-level predictor like this in Chapter 12. If you’d like to work with only 2 levels as you did in Chapter 11, you can utilize the penguin_data which includes only Adelie and Gentoo penguins:
+
+```{r}
+
+# filtering penguin data to two species
+# renaming variables to be less annoying
+
+penguin_data <- penguins_bayes |> 
+  filter(species %in% c("Adelie", "Gentoo")) |> 
+  rename(mass = body_mass_g, flipper = flipper_length_mm)  
+
+
+```
+
+##### Exericse 11.10 (Penguins! Main effects)
+
+Let's begin our analysis of penguin body_mass_g by exploring its relationship with flipper_length_mm and species.
+
+a. Plot and summarize the observed relationships among these three variables.
+
+```{r}
+
+ggplot(penguin_data, aes(y = mass, x = flipper, color = species))+
+  geom_point()+
+  geom_smooth(method = "lm", se = FALSE)
+
+
+```
+
+
+Okay, so flipper length and mass are linearly related (I'm not yet sure about the strength of the relationship based on the visualization). Additionally, Gentoo penguins seem to have higher mass and flipper length overall. The slope of the line for Gentoo might be slightly higher than that of Adelie. I wonder if this is worthy of including an interaction term. Something tells me I'm going to find out...
+
+b. Use stan_glm() to simulate a posterior Normal regression model of mass by flipper and species, without an interaction term.
+
+```{r, results='hide'}
+
+penguin_1 <- stan_glm(
+  mass ~ flipper + species,
+  data = penguin_data, family = gaussian,
+  prior_intercept = normal(4000, 250),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains = 4, iter = 5000*2)
+
+```
+
+
+c. Create and interpret both visual and numerical diagnostics of your MCMC simulation.
+
+```{r}
+
+mcmc_dens_overlay(penguin_1)
+mcmc_trace(penguin_1)
+
+
+```
+
+The simulation looks good visually!
+
+```{r}
+
+rhat(penguin_1)
+neff_ratio(penguin_1)
+
+```
+
+The data say the chains are looking good too!
+
+d. Produce a tidy() summary of this model. Interpret the non-intercept coefficients' posterior median values in context.
+
+```{r}
+
+tidy(penguin_1, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = .9)
+
+
+```
+
+Flipper : A one mm increase in flipper length typically leads to a 42 gram increase in mass, but this can vary from 36g to 48g.
+
+SpeciesGentoo : Gentoo penguins typically are 217 grams heavier than Adelie penguins given that they have the same flipper length.
+
+Sigma : The weight of a given penguin typically varies by about 392g from the mean, as little as 366g and as high as 422g
+
+mean_PPD : A typical penguin has a mass of 4316, but this mean can vary from 4259 to 4371
+
+e. Simulate, plot, and describe the posterior predictive model for the body mass of an Adelie penguin that has a flipper length of 197.
+
+```{r}
+
+adelie_prediction <- posterior_predict(
+  penguin_1,
+  newdata = data.frame(flipper = 197, species = "Adelie"))
+
+mcmc_areas(adelie_prediction)+
+  xlab("Weight")
+
+
+```
+
+A penguin with flipper length of 197mm will typically weight about 4000g, but this might vary from about 3200 to 4800
+
+##### Exercise 11.11 (Penguins! Interaction)
+
+Building from the previous exercise, our next goal is to model mass by flipper and species with an interaction term between these two predictors.
+
+a. Use stan_glm() to simulate the posterior for this model, with four chains at 10,000 iterations each.
+
+```{r, results='hide'}
+
+# I wonder if we could use the update function here. The syntax of how to do that is not clear to me.
+
+penguin_2 <- update(penguin_1, mass ~ flipper + species + flipper:species)
+
+
+```
+
+That took much longer than other simulations I think so something might be up. Gonna keep moving forward and will readjust if things seem weird.
+
+
+b. Simulate and plot 50 posterior model lines. Briefly describe what you learn from this plot.
+
+```{r}
+
+penguin_data |> select(flipper, mass, species) |> 
+  na.omit() |> 
+  add_fitted_draws(penguin_2, n = 50) |> 
+  ggplot(aes(x = flipper, y = mass, color = species))+
+  geom_line(aes(y = .value, group = paste(species, .draw)),
+            alpha = .1)+
+  geom_point(data = penguin_data, size = .1)
+
+
+```
+
+This plot has me thinking that maybe an interaction term isn't necessary. The general slope of the simulated lines look pretty similar to me.
+
+c. Produce a tidy() summary for this model. Based on the summary, do you have evidence that the interaction terms are necessary for this model? Explain your reasoning.
+
+```{r}
+
+tidy(penguin_2, effects = c("fixed", "aux"),
+     conf.int = TRUE, conf.level = .8)
+
+
+```
+
+So flipper length is associated with 17g more mass per mm for Gentoo than Adelie. Given that our average mass is in the 4000s, I don't think this interaction term is significant. It is there, I just don't think it matters. Is this healthy bayesian reasoning? Am I drunk with power?
+
+##### Exercise 11.12 (Penguins! 3 predictors) Next, let's explore a model of mass by three predictors: flipper, bill_length_mm, and bill_depth_mm. Do not use any interactions in this model.
+
+a. Use stan_glm() to simulate the posterior for this model.
+
+```{r, results='hide'}
+
+penguin_3 <- update(penguin_1, mass ~ flipper + bill_length_mm + bill_depth_mm
+)
+
+
+```
+
+
+b. Use posterior_interval() to produce 95% credible intervals for the model parameters.
+
+```{r}
+
+posterior_interval(penguin_3, prob = .95,
+                   pars = c("flipper", "bill_length_mm", "bill_depth_mm"))
+
+
+```
+
+
+c. Based on these 95% credible intervals, when controlling for the other predictors in the model, which predictors have a significant positive associate with body mass, which have significant negative association with body mass, and which have no significant association?
+
+All of the predictors have a positive association with mass. Bill length seems to be the strongest though, with bill length 95% of the time leading to mass increase of 55 to 87. I'm thinking what might be going on here is that penguin bills start small but grow more over time than they increase in depth or flipper length increases. This would lead to this predictor being more highly correlated with mass.
+
+##### Exercise 11.13 (Penguins! Comparing models)
+
+Consider 4 separate models of mass:
+
+1. mass ~ flipper
+
+2. mass ~ species
+
+3. mass ~ flipper + species
+
+4. mass ~ flipper + bill_length_mm + bill_depth_mm
+
+a. Simulate these four models using the stan_glm() function.
+
+```{r, results='hide'}
+
+pm1 <- stan_glm(
+  mass ~ flipper,
+  data = penguin_data, family = gaussian,
+  prior_intercept = normal(4000, 250),
+  prior = normal(0, 2.5, autoscale = TRUE),
+  prior_aux = exponential(1, autoscale = TRUE),
+  chains = 4, iter = 5000*2)
+
+pm2 <- update(pm1, mass ~ species)
+
+pm3 <- update(pm1, mass ~ flipper + species)
+
+pm4 <- update(pm1, mass ~ flipper + bill_length_mm + bill_depth_mm)
+
+
+
+```
+
+
+b. Produce and compare the pp_check() plots for the four models.
+
+```{r}
+
+pp_check(pm1)
+pp_check(pm2)
+pp_check(pm3)
+pp_check(pm4)
+
+
+```
+
+
+c. Use 10-fold cross-validation to assess and compare the posterior predictive quality of the four models using the prediction_summary_cv(). NOTE: We can only predict body mass for penguins that have complete information on our model predictors. Yet two penguins have NA values for multiple of those predictors. To remove these two penguins, we select() our columns of interest before removing the penguins with NA values. This way, we don't throw out penguins just because they're missing information on variables we don't care about:
+
+```{r}
+
+penguins_complete <- penguin_data |> 
+  select(flipper, mass, species, bill_length_mm, bill_depth_mm) |> 
+  na.omit()
+  
+```
+
+
+
+```{r}
+
+prediction_summary_cv(model = pm1, data = penguins_complete, k = 10)
+prediction_summary_cv(model = pm2, data = penguins_complete, k = 10)
+prediction_summary_cv(model = pm3, data = penguins_complete, k = 10)
+prediction_summary_cv(model = pm4, data = penguins_complete, k = 10)
+
+
+```
+
+d. Evaluate and compare the ELPD posterior predictive accuracy of the four models.
+
+Okay so we have:
+
+M1 : mae 271, mae scaled .69
+M2 : mae 368, mae scaled .76
+M3 : mae 280, mae scaled .70
+M4 : mae 236, mae scaled .70
+
+```{r}
+
+loo_1 <- loo(pm1)
+loo_2 <- loo(pm2)
+loo_3 <- loo(pm3)
+loo_4 <- loo(pm4)
+
+
+```
+
+
+```{r}
+
+# comparing ELPD for the four penguin models
+
+loo_compare(loo_1, loo_2, loo_3, loo_4)
+
+
+```
+
+This follows my intuition based on the results of the MAE analysis. 
+
+
+e. In summary, which of these four models is "best?" Explain.
+
+I think that model four is probably "best". It performed the best regarding MAE and LOO analysis. I think it could be made better though.
+
+I'm not going to do the full open-ended exercises, but I am curious...
+
+```{r, results='hide'}
+
+nm_1 <- update(pm1, mass ~ bill_length_mm + species)
+
+
+```
+
+
+```{r}
+
+pp_check(nm_1)
+
+
+```
+
+```{r, results='hide'}
+
+nm_2 <- update(pm1, mass ~ bill_length_mm, + species + species:bill_length_mm)
+
+
+```
+
+
+```{r}
+
+pp_check(nm_2)
+
+
+```
+
+```{r, results='hide'}
+
+nm_3 <- update(pm1, mass ~ species:bill_length_mm)
+
+
+```
+
+
+```{r}
+
+pp_check(nm_3)
+
+
+```
+
+This is getting a bit hard to track, plotting them together.
+
+```{r}
+
+pp_check(nm_1)
+pp_check(nm_2)
+pp_check(nm_3)
+
+
+```
+
+
+Are models one and three the same? I am trying to predict mass given bill length, controlling for species (model 3)
+
+I'm not sure what's causing the model to overestimate the first hump around 3000, but I like it still.
+
+Let's see how these compare to our previous models.
+
+```{r}
+
+loo_nm1 <- loo(nm_1)
+loo_nm2 <- loo(nm_2)
+loo_nm3 <- loo(nm_3)
+
+
+```
+
+
+```{r}
+
+loo_compare(loo_1, loo_2, loo_3, loo_4, loo_nm1, loo_nm2, loo_nm3)
+
+
+```
+
+
+rude!!!
+
+
+## Presentation proposal
+
+
+I haven't completely worked this out yet.
+
+Over the summer I was workshopping a project with Eduardo where we wanted to look at the rates at which Black people are murdered by the police as compared with rates at which Black people are murdered by "regular white people" aka civilians. Police murders (rightfully) gain a lot of media attention, but incidents between regular whites and Black people tend to gain less traction. The "fatal encounters" database is a comprehensive database of police killings. The NIBRS database is a (less comprehensive) database of violence between all people. I think I could use these two sources to parse out the differences between murder rates by civilians as compared to police. This would involve a lot of wrangling that I'm not sure I could do or would want to do. The databases are also both massive.
+
+I'm going to play around with this over the next few days and see if it's feasible. If it isn't I'll do something interesting from the GSS that I can create some normal models of.

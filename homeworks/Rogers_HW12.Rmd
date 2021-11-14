@@ -423,7 +423,7 @@ $\beta_{3}$ assesses the difference in mass between mr smiley and roma based on 
 
 a. Sketch a model that would benefit from including an interaction term between a categorical and quantitative predictor.
 
-I'm sorry I can't get these to roate properly. Something happens when they get pulled into R
+
 
 ![](/Users/alexr/Desktop/IMG_1361.jpg)
 
@@ -855,5 +855,7 @@ rude!!!
 I haven't completely worked this out yet.
 
 Over the summer I was workshopping a project with Eduardo where we wanted to look at the rates at which Black people are murdered by the police as compared with rates at which Black people are murdered by "regular white people" aka civilians. Police murders (rightfully) gain a lot of media attention, but incidents between regular whites and Black people tend to gain less traction. The "fatal encounters" database is a comprehensive database of police killings. The NIBRS database is a (less comprehensive) database of violence between all people. I think I could use these two sources to parse out the differences between murder rates by civilians as compared to police. This would involve a lot of wrangling that I'm not sure I could do or would want to do. The databases are also both massive.
+
+As I return to this before final submission I'm worried. I think what I was imagining was a categorical variable for police yes/no, with the alternate being civilian, then seeing if for as many killings as there are, if a person is more likely to be killed by police or by regular whites? So independent variable police/civilian, dependent variable # of killings. I could model this using a Normal linear regression. I think that because I can't explain this clearly it might not be a good idea. Plus the data are in two datasets. I'd love your input on this Nico.
 
 I'm going to play around with this over the next few days and see if it's feasible. If it isn't I'll do something interesting from the GSS that I can create some normal models of.

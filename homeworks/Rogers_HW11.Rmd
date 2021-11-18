@@ -760,6 +760,31 @@ mcmc_dens_overlay(perth_model)
 
 so our model is healthy. I think a Normal linear regression model is a good way to model this data, there does seem to be a relationship between $X$ min temp and $Y$ max temperature.
 
+
+Posterior predictive checks:
+
+```{r}
+
+pp_check(perth_model, nreps = 100)+
+  xlab("Max temperature")
+
+
+```
+
+```{r}
+
+perth_prediction <- posterior_predict(perth_model, newdata = weather_perth)
+
+ppc_intervals(weather_perth$maxtemp, yrep = perth_prediction,
+              x = weather_perth$mintemp, prob = .5, prob_outer = .95)+
+  labs(x = "Min temp", y = "Max temp")
+
+
+```
+
+So our model does a very good job of predicting values within 95% CI. Visually, the model follows the data reasonably well, but doesn't seem to account for the bimodality.
+
+
 ##### Exercise 10.21 (Open-ended: more bikes)
 
 In this exercise you will use the bikes data in the bayesrules package to explore the Normal regression model of rides by humidity. You can either tune or utilize weakly informative priors.
@@ -823,3 +848,26 @@ mcmc_dens_overlay(bikes_model)
 ```
 
 Okay. So our MCMC simulation is healthy. Howerver, I think I can confidently say this is not a strong linear relationship. For one, sometimes humidity can increase ridership and sometimes it can decrease it $X$ can  take values above or below 0 on .9 CI. Visually, this also just doesn't seem to be a strong linear relationship at all, the line has an almost zero slope.
+
+Posterior predictive checks:
+
+```{r}
+
+pp_check(bikes_model, nreps = 100)
+xlab("Rides")
+
+```
+
+
+```{r}
+
+bikes_prediction <- posterior_predict(bikes_model, newdata = bikes)
+
+ppc_intervals(bikes$rides, yrep = bikes_prediction,
+              x = bikes$humidity, prob = .5, prob_outer = .95)+
+xlab("Humidity")+
+  ylab("Rides")
+
+```
+
+Both of these visualizations indicate that the bikes model does decently well at predicting ridership based on humidity, but could be improved. The intervals visualization in particular shows us that most of the rides are within the 90% interval, they are quite spread within that, and it doesn't look like 50% are within the 50% interval. This model could benefit from more predictors it seems!
